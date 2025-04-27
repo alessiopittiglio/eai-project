@@ -1,0 +1,80 @@
+{
+    "model": "Xception3d",
+    "optimizer": "SGD",
+    "optimizer_params": {
+        "lr": "0.045",
+        "momentum": "0.9",
+        "dampening": "0",
+        "weight_decay": "0",
+        "nesterov": "False",
+        "maximize": "False",
+        "foreach": "None",
+        "differentiable": "False",
+        "fused": "None"
+    },
+    "scheduler": {
+        "scheduler": "StepLR",
+        "params": {
+            "step_size": "2",
+            "gamma": "0.94",
+            "optimizer": "SGD (\nParameter Group 0\n    dampening: 0\n    differentiable: False\n    foreach: None\n    fused: None\n    initial_lr: 0.045\n    lr: 0.045\n    maximize: False\n    momentum: 0.9\n    nesterov: False\n    weight_decay: 0\n)",
+            "base_lrs": "[0.045]",
+            "last_epoch": "0",
+            "_step_count": "1",
+            "_get_lr_called_within_step": "False",
+            "_last_lr": "[0.045]"
+        }
+    },
+    "scheduler_params": {
+        "step_size": "2",
+        "gamma": "0.94",
+        "optimizer": "SGD (\nParameter Group 0\n    dampening: 0\n    differentiable: False\n    foreach: None\n    fused: None\n    initial_lr: 0.045\n    lr: 0.045\n    maximize: False\n    momentum: 0.9\n    nesterov: False\n    weight_decay: 0\n)",
+        "base_lrs": "[0.045]",
+        "last_epoch": "0",
+        "_step_count": "1",
+        "_get_lr_called_within_step": "False",
+        "_last_lr": "[0.045]"
+    },
+    "loss_fn": "CrossEntropyLoss",
+    "loss_fn_params": {
+        "training": "True",
+        "reduction": "mean",
+        "ignore_index": "-100",
+        "label_smoothing": "0.0"
+    },
+    "data_transforms": [
+        {
+            "name": "ToPILImage",
+            "params": {
+                "mode": "None"
+            }
+        },
+        {
+            "name": "Resize",
+            "params": {
+                "training": "True",
+                "size": "(224, 224)",
+                "max_size": "None",
+                "interpolation": "InterpolationMode.BILINEAR",
+                "antialias": "True"
+            }
+        },
+        {
+            "name": "ToTensor",
+            "params": {}
+        }
+    ],
+    "training_set_size": 7,
+    "validation_set_size": 2,
+    "test_set_size": 2,
+    "batch_size_train": 4,
+    "batch_size_val": 4,
+    "batch_size_test": 4,
+    "num_epochs": 10,
+    "patience": 5,
+    "best_model_path": "models/Xception3d/best_model.pth",
+    "last_model_path": "models/Xception3d/last_model.pth",
+    "cross_val": false,
+    "num_splits": null,
+    "date": "2025-04-27 10:01:57"
+}
