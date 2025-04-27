@@ -41,21 +41,23 @@ class XceptionBlock3D(nn.Module):
                           stride=stride, bias=False),
                 nn.BatchNorm3d(out_channels)
             )
+            
+        self.relu = nn.ReLU(inplace=False) 
 
         layers = []
         # first conv in block
         if grow_first:
-            layers.append(nn.ReLU(inplace=True))
+            layers.append(self.relu)
             layers.append(SeparableConv3d(in_channels, filters,
                                           kernel_size=3, stride=1, padding=1, bias=False))
             in_channels = filters
         for _ in range(reps - 1):
-            layers.append(nn.ReLU(inplace=True))
+            layers.append(self.relu)
             layers.append(SeparableConv3d(in_channels, in_channels,
                                           kernel_size=3, stride=1, padding=1, bias=False))
         # last conv: change resolution if stride>1
         if not grow_first:
-            layers.append(nn.ReLU(inplace=True))
+            layers.append(self.relu)
             layers.append(SeparableConv3d(in_channels, filters,
                                           kernel_size=3, stride=1, padding=1, bias=False))
         if stride != 1:
@@ -132,11 +134,10 @@ class Model(nn.Module):
         feat   = self.backbone(x)                # (B, 2048, T', H', W')
         pooled = self.pool(feat).view(x.size(0), -1)  # (B, 2048)
         logit  = self.fc(pooled)                 # (B, 1)
-        prob   = torch.sigmoid(logit)            # (B, 1)
-        return prob
+        return logit
     
 def get_loss_fn():
-    return nn.CrossEntropyLoss()
+    return nn.BCEWithLogitsLoss()
 
 def get_optimizer(model_params):
     optimizer = torch.optim.SGD(model_params, lr=0.045, momentum=0.9)

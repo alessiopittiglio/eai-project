@@ -1,0 +1,8 @@
+              precision    recall  f1-score   support
+
+        FAKE       0.00      0.00      0.00       0.0
+        REAL       0.00      0.00      0.00       0.0
+
+   micro avg       0.00      0.00      0.00       0.0
+   macro avg       0.00      0.00      0.00       0.0
+weighted avg       0.00      0.00      0.00       0.0

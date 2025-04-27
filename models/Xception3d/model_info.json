@@ -35,12 +35,10 @@
         "_get_lr_called_within_step": "False",
         "_last_lr": "[0.045]"
     },
-    "loss_fn": "CrossEntropyLoss",
+    "loss_fn": "BCEWithLogitsLoss",
     "loss_fn_params": {
         "training": "True",
-        "reduction": "mean",
-        "ignore_index": "-100",
-        "label_smoothing": "0.0"
+        "reduction": "mean"
     },
     "data_transforms": [
         {
@@ -76,5 +74,5 @@
     "last_model_path": "models/Xception3d/last_model.pth",
     "cross_val": false,
     "num_splits": null,
-    "date": "2025-04-27 10:01:57"
+    "date": "2025-04-27 11:40:59"
 }
