@@ -1,4 +1,0 @@
-Input Notebook:  notebook.ipynb
-Output Notebook: ./models/Xception3d/output_notebook.ipynb
-Executing:   0%|          | 0/46 [00:00<?, ?cell/s]Executing notebook with kernel: python3
-Executing:   2%|▏         | 1/46 [00:01<01:22,  1.84s/cell]Executing:  13%|█▎        | 6/46 [00:06<00:42,  1.05s/cell]Executing:  26%|██▌       | 12/46 [00:06<00:14,  2.32cell/s]Executing:  37%|███▋      | 17/46 [00:10<00:16,  1.71cell/s]Executing:  41%|████▏     | 19/46 [00:30<00:15,  1.71cell/s]Executing:  43%|████▎     | 20/46 [00:35<01:07,  2.61s/cell]Executing:  48%|████▊     | 22/46 [00:35<00:50,  2.10s/cell]Executing:  52%|█████▏    | 24/46 [00:36<00:39,  1.78s/cell]Executing:  67%|██████▋   | 31/46 [00:37<00:12,  1.17cell/s]Executing:  76%|███████▌  | 35/46 [00:50<00:09,  1.17cell/s]
