@@ -62,9 +62,10 @@
             "params": {}
         }
     ],
-    "training_set_size": 7,
-    "validation_set_size": 2,
-    "test_set_size": 2,
+    "dataset": "FFPP",
+    "training_set_size": 2401,
+    "validation_set_size": 515,
+    "test_set_size": 515,
     "batch_size_train": 4,
     "batch_size_val": 4,
     "batch_size_test": 4,
@@ -74,5 +75,5 @@
     "last_model_path": "models/Xception3d/last_model.pth",
     "cross_val": false,
     "num_splits": null,
-    "date": "2025-04-27 11:40:59"
+    "date": "2025-05-04 21:40:48"
 }
