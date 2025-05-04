@@ -1,6 +1,7 @@
 data/
 __pycache__/
 DeepfakeBench/
+models/Xception3d/runs/
 .DS_Store
 faceforensics_download_v4.py
 log.txt
