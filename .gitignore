@@ -1,6 +1,5 @@
-data
+data/
+__pycache__/
+DeepfakeBench/
 .DS_Store
-__pycache__
-
-DeepfakeBench
 faceforensics_download_v4.py
