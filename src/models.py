@@ -61,7 +61,7 @@ class XceptionBlock3D(nn.Module):
                 nn.BatchNorm3d(out_channels)
             )
 
-        self.relu = nn.ReLU(inplace=True) # Changed to inplace=True for efficiency
+        self.relu = nn.ReLU(inplace=False)
 
         layers = []
         current_channels = in_channels
