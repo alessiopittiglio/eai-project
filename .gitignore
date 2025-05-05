@@ -1,6 +1,7 @@
 data/
 data_frames/
 docs/
+models/*/metrics/
 __pycache__/
 DeepfakeBench/
 models/Xception3d/runs/
