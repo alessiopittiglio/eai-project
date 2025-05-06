@@ -1,0 +1,68 @@
+# Experiment: ResNet18 on FaceForensics++ (FFPP)
+
+# -----------------------------------------------------------------------------------------------------
+# General Settings
+# -----------------------------------------------------------------------------------------------------
+project_name: "deepfake-detection"
+seed: 42
+
+# -----------------------------------------------------------------------------------------------------
+# Data Configuration (for DeepfakeDataModule)
+# -----------------------------------------------------------------------------------------------------
+data:
+  data_dir: data_frames/ffpp           
+  label_dirs:
+    REAL: 0
+    FAKE: 1
+  load_sequences: false         
+  sequence_length: 16
+  sampling_stride: 1      
+  max_frames_per_video: null
+  max_videos_per_split: null
+
+  # DataLoader parameters
+  batch_size: 8
+  num_workers: 4
+
+  # Parameters for building transforms
+  transform:
+    img_size: 224
+    norm_mean: [0.485, 0.456, 0.406]
+    norm_std: [0.229, 0.224, 0.225]
+    train_augmentations: true
+
+# -----------------------------------------------------------------------------------------------------
+# Model Configuration (for DeepfakeClassifier)
+# -----------------------------------------------------------------------------------------------------
+model:
+  model_name: resnet18_single_frame
+  
+  # Parameters for optimizer and scheduler
+  optimizer_name: "adam"
+  learning_rate: 0.0001
+  use_scheduler: false
+
+# -----------------------------------------------------------------------------------------------------
+# Settings for the PyTorch Lightning Trainer
+# -----------------------------------------------------------------------------------------------------
+trainer:
+  accelerator: "auto"
+  devices: "auto"
+  precision: bf16-mixed
+  deterministic: false
+  max_epochs: 20
+  callbacks:
+    early_stopping:
+      patience: 5
+
+# -----------------------------------------------------------------------------------------------------
+# Logging Configuration (for the Trainer's logger)
+# -----------------------------------------------------------------------------------------------------
+logger:
+  type: "tensorboard"
+
+# -----------------------------------------------------------------------------
+# Settings for the execution
+# -----------------------------------------------------------------------------
+
+output_dir: "./outputs"
