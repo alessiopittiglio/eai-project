@@ -4,10 +4,10 @@ DeepfakeBench/
 data/
 data_frames/
 docs/
-models/Xception3d/runs/
 faceforensics_download_v4.py
 lightning_logs/
 log.txt
 models/*/metrics/
+models/*/runs/
 outputs/
 wandb/
