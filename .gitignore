@@ -1,10 +1,13 @@
+.DS_Store
+__pycache__/
+DeepfakeBench/
 data/
 data_frames/
 docs/
-models/*/metrics/
-__pycache__/
-DeepfakeBench/
 models/Xception3d/runs/
-.DS_Store
 faceforensics_download_v4.py
+lightning_logs/
 log.txt
+models/*/metrics/
+outputs/
+wandb/
