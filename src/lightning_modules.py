@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import lightning as L
 from torchmetrics import Accuracy
-from src.models import ResNet18, Xception3D
+from models import ResNet18, Xception3D
 
 class DeepfakeClassifier(L.LightningModule):
     def __init__(
