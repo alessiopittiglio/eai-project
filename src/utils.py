@@ -1,7 +1,7 @@
 import torchvision.transforms as T
 
 def build_transforms(config: dict, augment: bool) -> T.Compose:
-    """_summary_
+    """
 
     Args:
         config (dict): _config dictionary containing the parameters for the transformations

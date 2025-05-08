@@ -54,7 +54,7 @@ class DeepfakeDataModule(L.LightningDataModule):
         pass
 
     def setup(self, stage: Optional[str] = None) -> None:
-        """_summary_
+        """
         
         Args:
             stage (Optional[str], optional): Stage of the pipeline. Defaults to None.
