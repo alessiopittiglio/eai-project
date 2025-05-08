@@ -52,7 +52,11 @@ class BaseFramesDataset(Dataset):
         """
         Load an image from the given path.
         """
-        img = Image.open(path).convert('RGB')
+        try:
+            img = Image.open(path).convert('RGB')
+        except Exception as e:
+            logger.error(f"[Dataset: {self.__class__.__name__}] Error loading image {path}: {e}")
+            raise e
         return img
 
 class SingleFrameDataset(BaseFramesDataset):

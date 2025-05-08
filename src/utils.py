@@ -16,13 +16,12 @@ def build_transforms(config: dict, augment: bool) -> T.Compose:
     norm_mean = config.get('norm_mean', (0.485, 0.456, 0.406))
     norm_std = config.get('norm_std', (0.229, 0.224, 0.225))
     should_augment = augment and config.get('train_augmentations', True)
-
+    
     # Define the transformations
     transforms_list = [
-        T.Normalize(mean=norm_mean, std=norm_std),
         T.Resize((img_size, img_size))
         ]
-
+    
     # Add augmentations if in training mode
     if should_augment:
         # Add here the desired augmentations for training
@@ -33,8 +32,9 @@ def build_transforms(config: dict, augment: bool) -> T.Compose:
     # Note: The order of transformations is important.
     transforms_list.extend([
         T.ToTensor(),
-        T.Lambda(lambda x: x.permute(2, 0, 1)),  # Change from (H, W, C) to (C, H, W)
-        T.Lambda(lambda x: x.unsqueeze(0))  # Add a channel dimension for 3D models
+        T.Normalize(mean=norm_mean, std=norm_std),
+        #T.Lambda(lambda x: x.permute(2, 0, 1)),  # Change from (H, W, C) to (C, H, W)
+        #T.Lambda(lambda x: x.unsqueeze(0))  # Add a channel dimension for 3D models
     ])
     
     # Create the composed transform
