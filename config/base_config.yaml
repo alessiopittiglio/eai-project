@@ -21,15 +21,16 @@ data:
   max_frames_per_video: null      # Optional: max frames per video (for SingleFrameDataset)
   max_videos_per_split: null      # Optional: max videos per split (for SequenceDataset)
 
-  # Parameters for building transforms
-  img_size: 224                         # Input image H, W
-  norm_mean: [0.485, 0.456, 0.406]      # ImageNet mean
-  norm_std: [0.229, 0.224, 0.225]       # ImageNet std
-  train_augmentations: true             # Enable/disable data augmentation for training
-
   # DataLoader parameters
   batch_size: 32
   num_workers: 4
+
+  # Parameters for building transforms
+  transform:
+    img_size: 224                         # Input image H, W
+    norm_mean: [0.485, 0.456, 0.406]      # ImageNet mean
+    norm_std: [0.229, 0.224, 0.225]       # ImageNet std
+    train_augmentations: true             # Enable/disable data augmentation for training
 
 # -----------------------------------------------------------------------------------------------------
 # Model Configuration (for DeepfakeClassifier)

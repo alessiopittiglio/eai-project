@@ -14,11 +14,11 @@ data:
   label_dirs:
     REAL: 0
     FAKE: 1
-  load_sequences: false         
-  sequence_length: 16
-  sampling_stride: 1      
-  max_frames_per_video: null
-  max_videos_per_split: null
+  load_sequences: false           # Default: false (loads single frames [C,H,W])
+  sequence_length: 16             # Used if load_sequences: true (sequence length T)
+  sampling_stride: 1              # Used if load_sequences: true (stride between frames in sequence)
+  max_frames_per_video: null      # Optional: max frames per video (for SingleFrameDataset)
+  max_videos_per_split: null      # Optional: max videos per split (for SequenceDataset)
 
   # DataLoader parameters
   batch_size: 8
