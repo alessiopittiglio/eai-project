@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import lightning as L
 from torchmetrics import Accuracy
-from src.models import ResNet18SingleFrame, Xception3DClassifier
+from src.models import ResNet18, Xception3D
 
 class DeepfakeClassifier(L.LightningModule):
     def __init__(
@@ -15,26 +15,31 @@ class DeepfakeClassifier(L.LightningModule):
         ):
         super().__init__()
         
+        # Save arguments in hparams attribute
+        # This allows to access them later in the code
+        # and also to log them in the experiment tracker
         self.save_hyperparameters()
 
         self.test_step_outputs = [] 
 
         if self.hparams.model_name == "resnet18_single_frame":
-            self.model = ResNet18SingleFrame(num_classes=2)
+            self.model = ResNet18.ResNet18SingleFrame(num_classes=2)
             self.criterion = nn.CrossEntropyLoss()
             self.num_classes = 2
 
             self.train_acc = Accuracy(task="multiclass", num_classes=2)
             self.val_acc = Accuracy(task="multiclass", num_classes=2)
             self.test_acc = Accuracy(task="multiclass", num_classes=2)
+        
         elif self.hparams.model_name == "xception3d":
             # N.B: This model requires input with shape (B, C, T, H, W)
-            self.model = Xception3DClassifier() # Output has 1 class
+            self.model = Xception3D.Xception3DClassifier() # Output has 1 class
             self.criterion = nn.BCEWithLogitsLoss()
             self.num_classes = 1
             self.train_acc = Accuracy(task="binary")
             self.val_acc = Accuracy(task="binary")
             self.test_acc = Accuracy(task="binary")
+        
         else:
             raise ValueError(f"Model {self.hparams.model_name} not exists")
     
@@ -74,7 +79,7 @@ class DeepfakeClassifier(L.LightningModule):
         if self.hparams.optimizer_name.lower() == "adam":
             optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.learning_rate)
         elif self.hparams.optimizer_name.lower() == "sgd":
-            optimizer = torch.optim.SGD(self.parameters(), lr=self.hparams.learning_rate, momentum=0.9)
+            optimizer = torch.optim.SGD(self.parameters(), lr=self.hparams.learning_rate, momentum=self.hparams.momentum)
         else:
             raise ValueError(f"Optimizer {self.hparams.optimizer_name} not supported")
         

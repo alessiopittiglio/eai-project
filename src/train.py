@@ -16,14 +16,22 @@ logger = logging.getLogger(__name__)
 torch.set_float32_matmul_precision('high')
 
 def main(config):
+    # Define timestamp and run ID
+    # This is used for logging and saving the model
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     run_id = timestamp
+    
+    # Set the random seed for reproducibility
     L.seed_everything(config['seed'], workers=True)
 
+    # Set the output directory for saving the model and logs
     output_path = Path(config['output_dir']) / config['model']['model_name']
     output_path.mkdir(parents=True, exist_ok=True)
     logger.info(f"Output saved to: {output_path}")
- 
+    
+    # Define the data module: 
+    # this is used for loading the data
+    # and splitting it into train, validation, and test sets
     data_module = DeepfakeDataModule(
         data_dir=config['data']['data_dir'],
         label_dirs=config['data']['label_dirs'],
@@ -37,6 +45,7 @@ def main(config):
         transform_config=config['data']['transform'],
     )
 
+    # Define the model
     model = DeepfakeClassifier(
         model_name=config['model']['model_name'],
         learning_rate=config['model']['learning_rate'],
@@ -44,6 +53,7 @@ def main(config):
         use_scheduler=config['model']['use_scheduler'],
     )
 
+    # Load the model weights if specified
     model_checkpoint = ModelCheckpoint(
         #dirpath=output_path / "checkpoints",
         filename=f"{{epoch:02d}}-{{val_loss:.2f}}",
@@ -53,14 +63,22 @@ def main(config):
         save_last=True
     )
 
-    early_stopping = EarlyStopping(
-        monitor="val_loss",
-        patience=config['trainer']['callbacks']['early_stopping']['patience'],
-        mode="min",
-    )
+    # Define the callbacks:
+    # stopping the training early if the validation loss does not improve
+    if config['trainer']['callbacks']['early_stopping']:
+        early_stopping = EarlyStopping(
+            monitor="val_loss",
+            patience=config['trainer']['callbacks']['early_stopping']['patience'],
+            mode="min",
+        )
+    else:
+        raise ValueError("Early stopping is not enabled in the config file.")
 
+    # Define the learning rate monitor
+    # this is used for logging the learning rate during training
     lr_monitor = LearningRateMonitor(logging_interval="epoch")
 
+    # Define the logger
     pl_logger = None
     if config['logger']['type'] == "tensorboard":
         pl_logger = TensorBoardLogger(
@@ -73,6 +91,7 @@ def main(config):
             #save_dir=output_path,
         )
 
+    # Define the trainer
     trainer = L.Trainer(
         accelerator=config['trainer']['accelerator'],
         precision=config['trainer']['precision'],

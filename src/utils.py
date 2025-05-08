@@ -1,21 +1,41 @@
 import torchvision.transforms as T
 
 def build_transforms(config: dict, augment: bool) -> T.Compose:
+    """_summary_
+
+    Args:
+        config (dict): _config dictionary containing the parameters for the transformations
+        augment (bool): _whether to apply augmentations or not
+
+    Returns:
+        T.Compose: _composed transformation
+    """
+    
+    # Retrieve params
     img_size = config.get('img_size', 224)
     norm_mean = config.get('norm_mean', (0.485, 0.456, 0.406))
     norm_std = config.get('norm_std', (0.229, 0.224, 0.225))
     should_augment = augment and config.get('train_augmentations', True)
 
-    normalize = T.Normalize(mean=norm_mean, std=norm_std)
-    transforms_list = [T.Resize((img_size, img_size))]
+    # Define the transformations
+    transforms_list = [
+        T.Normalize(mean=norm_mean, std=norm_std),
+        T.Resize((img_size, img_size))
+        ]
 
+    # Add augmentations if in training mode
     if should_augment:
         # Add here the desired augmentations for training
         if config.get('aug_use_horizontal_flip', True):
             transforms_list.append(T.RandomHorizontalFlip(p=0.5))
 
+    # Transform to Tensor
+    # Note: The order of transformations is important.
     transforms_list.extend([
-        T.ToTensor(), # Converts PIL [0,255] HWC to Tensor [0,1] CHW
-        normalize
+        T.ToTensor(),
+        T.Lambda(lambda x: x.permute(2, 0, 1)),  # Change from (H, W, C) to (C, H, W)
+        T.Lambda(lambda x: x.unsqueeze(0))  # Add a channel dimension for 3D models
     ])
+    
+    # Create the composed transform
     return T.Compose(transforms_list)

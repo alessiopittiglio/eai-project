@@ -26,7 +26,11 @@ class DeepfakeDataModule(L.LightningDataModule):
         ):
         super().__init__()
 
+        # Save arguments in hparams attribute
+        # This allows to access them later in the code
+        # and also to log them in the experiment tracker
         self.save_hyperparameters()
+        
         self.train_tfm = None
         self.eval_tfm = None
 
@@ -49,10 +53,25 @@ class DeepfakeDataModule(L.LightningDataModule):
         # Download and prepare the dataset
         pass
 
-    def setup(self, stage: Optional[str] = None):
+    def setup(self, stage: Optional[str] = None) -> None:
+        """_summary_
+        
+        Args:
+            stage (Optional[str], optional): Stage of the pipeline. Defaults to None.
+                - "fit": training and validation
+                - "test": testing
+                - "predict": prediction
+                - None: all stages
+        """
+        
+        # Define the data preprocessing transforms
         transform_config = self.hparams.transform_config if self.hparams.transform_config is not None else {}
+        
+        # Build the transforms for training
         if not self.train_tfm:
             self.train_tfm = build_transforms(config=transform_config, augment=True)
+        
+        # Build the transforms for evaluation
         if not self.eval_tfm:
             self.eval_tfm = build_transforms(config=transform_config, augment=False)
 
