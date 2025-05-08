@@ -10,18 +10,18 @@ seed: 42
 # Data Configuration (for DeepfakeDataModule)
 # -----------------------------------------------------------------------------------------------------
 data:
-  data_dir: data_frames/ffpp_sub_20_continuous           
+  data_dir: data_frames/ffpp_sub_30_continuous           
   label_dirs:
     REAL: 0
     FAKE: 1
-  load_sequences: false           # Default: false (loads single frames [C,H,W])
-  sequence_length: 16             # Used if load_sequences: true (sequence length T)
+  load_sequences: True           # Default: false (loads single frames [C,H,W])
+  sequence_length: 9             # Used if load_sequences: true (sequence length T)
   sampling_stride: 1              # Used if load_sequences: true (stride between frames in sequence)
   max_frames_per_video: null      # Optional: max frames per video (for SingleFrameDataset)
   max_videos_per_split: null      # Optional: max videos per split (for SequenceDataset)
 
   # DataLoader parameters
-  batch_size: 8
+  batch_size: 2
   num_workers: 4
 
   # Parameters for building transforms
@@ -35,12 +35,18 @@ data:
 # Model Configuration (for DeepfakeClassifier)
 # -----------------------------------------------------------------------------------------------------
 model:
-  model_name: resnet18_single_frame
+  model_name: xception3d
   
   # Parameters for optimizer and scheduler
-  optimizer_name: "adam"
-  learning_rate: 0.0001
-  use_scheduler: false
+  optimizer_name: "sgd"
+  learning_rate: 0.045
+  momentum: 0.9
+
+  use_scheduler: true
+  sched_params:
+    scheduler_name: "step"
+    scheduler_step_size: 2
+    scheduler_gamma: 0.94
 
 # -----------------------------------------------------------------------------------------------------
 # Settings for the PyTorch Lightning Trainer

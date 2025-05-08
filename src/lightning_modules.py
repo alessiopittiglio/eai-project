@@ -9,6 +9,7 @@ class DeepfakeClassifier(L.LightningModule):
             self, 
             model_name: str, 
             learning_rate: float,
+            momentum: float,
             optimizer_name: str,
             use_scheduler: bool,
             **kwargs
@@ -84,7 +85,8 @@ class DeepfakeClassifier(L.LightningModule):
             raise ValueError(f"Optimizer {self.hparams.optimizer_name} not supported")
         
         if self.hparams.use_scheduler:
-            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.94)
+            if self.hparams.scheduler_name.lower() == "step":
+                scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=self.hparams.scheduler_step_size, gamma=self.hparams.scheduler_gamma)
 
             return {
                 "optimizer": optimizer,

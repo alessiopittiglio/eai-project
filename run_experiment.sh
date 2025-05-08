@@ -17,7 +17,7 @@
 # ==============================================================================
 
 DATASET_TYPE="ffpp"
-CONFIG_FILE="config/resnet_ffpp.yaml"
+CONFIG_FILE="config/xception3d_ffpp.yaml"
 
 PREPROCESS_OUTPUT_DIR="data_frames"
 
@@ -29,9 +29,9 @@ FFPP_MANIP_ROOT="data/ff++/manipulated_sequences/DeepFakeDetection/c23/videos"
 FFPP_VAL_SIZE=0.15
 FFPP_TEST_SIZE=0.15
 
-NUM_FRAMES_EXTRACT=50
+NUM_FRAMES_EXTRACT=30
 FORCE_PREPROCESS=false
-SKIP_PREPROCESS=false
+SKIP_PREPROCESS=true
 
 # End Configuration
 

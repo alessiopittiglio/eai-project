@@ -49,8 +49,10 @@ def main(config):
     model = DeepfakeClassifier(
         model_name=config['model']['model_name'],
         learning_rate=config['model']['learning_rate'],
+        momentum=config['model']['momentum'],
         optimizer_name=config['model']['optimizer_name'],
         use_scheduler=config['model']['use_scheduler'],
+        **config['model']['sched_params'],
     )
 
     # Load the model weights if specified
