@@ -84,7 +84,7 @@ def main(config):
         pl_logger = TensorBoardLogger(
             save_dir=output_path,
         )
-    elif ['logger']['type'] == "wandb":
+    elif config['logger']['type'] == "wandb":
         pl_logger = WandbLogger(
             project=config['project_name'],
             #name=config['model]['model_name],
