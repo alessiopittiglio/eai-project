@@ -21,7 +21,7 @@ python scripts/preprocess_frames.py \
 
 Training is managed using src/train.py script, which loads its configuration from a specified YAML file:
 
-- Choose or create a YAML configuration file in `config/` (e.g., `config ffpp_resnet18.yaml`).
+- Choose or create a YAML configuration file in `config/` (e.g., `config resnet_ffpp.yaml`).
 - Run training script:
 
 ```
