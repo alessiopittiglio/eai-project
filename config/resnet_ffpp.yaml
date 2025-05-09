@@ -36,24 +36,45 @@ data:
 # -----------------------------------------------------------------------------------------------------
 model:
   model_name: resnet18_single_frame
+  num_classes: 2
+
+  model_params:
+    num_classes: 2
+
+  # Parameters for criterion
+  criterion_name: "cross_entropy"
+  criterion_params: {}
   
   # Parameters for optimizer and scheduler
   optimizer_name: "adam"
-  learning_rate: 0.0001
+  optimizer_params:
+    weight_decay: 0.01
+    lr: 1e-4
+    betas: [0.9, 0.999]
+    eps: 1e-08
+
+  # Parameters for learning rate scheduler
   use_scheduler: false
+  scheduler_params: {}
+  
+  # Accuracy metric
+  accuracy_task: "multiclass"
+  accuracy_task_params:
+    num_classes: 2 # Only used for multiclass accuracy metric
+
 
 # -----------------------------------------------------------------------------------------------------
 # Settings for the PyTorch Lightning Trainer
 # -----------------------------------------------------------------------------------------------------
 trainer:
   accelerator: "auto"
-  devices: "auto"
+  devices: 2
   precision: bf16-mixed
   deterministic: false
-  max_epochs: 20
+  max_epochs: 250
   callbacks:
     early_stopping:
-      patience: 5
+      patience: 15
 
 # -----------------------------------------------------------------------------------------------------
 # Logging Configuration (for the Trainer's logger)

@@ -26,7 +26,7 @@ data:
 
   # Parameters for building transforms
   transform:
-    img_size: 224
+    img_size: [1080,720]  # [H,W]
     norm_mean: [0.485, 0.456, 0.406]
     norm_std: [0.229, 0.224, 0.225]
     train_augmentations: true
@@ -35,35 +35,50 @@ data:
 # Model Configuration (for DeepfakeClassifier)
 # -----------------------------------------------------------------------------------------------------
 model:
-  model_name: xception3d
-  num_classes: 1
-  
-  model_params: {}
+  model_name: VideoTransformer
+  num_classes: 2
+
+  model_params:
+    image_size: [1080, 720]  # [H,W]
+    num_frames: 16
+    in_channels: 3
+    patch_size: [2, 16, 16] # [T, H, W]
+    embed_dim: 768
+    depth: 12
+    num_heads: 12
+    mlp_ratio: 4.0
+    dropout: 0.1
+    num_classes: 2
 
   # Parameters for criterion
-  criterion_name: "bce_logit_loss"
+  criterion_name: "cross_entropy"
   criterion_params: {}
 
+    
   # Parameters for optimizer and scheduler
-  optimizer_name: "sgd"
+  optimizer_name: "adam"
   optimizer_params:
     weight_decay: 0.01
-    lr: 0.045
-    momentum: 0.9
+    lr: 1e-4
+    betas: [0.9, 0.999]
+    eps: 1e-08
 
-  # Parameters for learning rate scheduler
   use_scheduler: true
-  scheduler_name: "step"
-  sched_params:
-    step_size: 2
-    gamma: 0.94
+  scheduler_name: "warmup"
+  scheduler_params:
+    num_warmup_steps: 500    # e.g. first 500 steps warm up
+    # num_training_steps=total_steps = num_epochs * (num_training_samples // batch_size)
+
+  accuracy_task: "multiclass"
+  accuracy_task_params:
+    num_classes: 2 # Only used for multiclass accuracy metric
 
 # -----------------------------------------------------------------------------------------------------
 # Settings for the PyTorch Lightning Trainer
 # -----------------------------------------------------------------------------------------------------
 trainer:
   accelerator: "auto"
-  devices: 2
+  devices: "auto"
   precision: bf16-mixed
   deterministic: false
   max_epochs: 250
