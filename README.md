@@ -44,6 +44,30 @@ chmod +x run_experiment.sh
 ./run_experiment.sh
 ```
 
+### Running with nohup
+
+To run the script in the background and ensure it continues executing even if the session is closed, use `nohup`:
+
+```
+nohup python src/train.py --config config/your_chosen_config.yaml > output.log 2>&1 &
+```
+
+- Replace `your_chosen_config.yaml` with the desired configuration file.
+- The output will be logged to `output.log`. You can change the filename as needed.
+- The `&` at the end runs the process in the background.
+
+To check the process, use:
+
+```
+ps aux | grep train.py
+```
+
+To stop the process, use:
+
+```
+kill <process_id>
+```
+
 ## References
 
 1. Chollet, F. (2017). *Xception: Deep Learning with Depthwise Separable Convolutions* [Preprint]. arXiv. https://arxiv.org/abs/1610.02357
