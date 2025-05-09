@@ -131,17 +131,17 @@ class Xception3DClassifier(nn.Module):
     """
     Classifier using the Xception3D backbone.
     Input: (B, C, T, H, W)
-    Output: (B, 1) logit
+    Output: (B, num_classes) logit
     """
-    def __init__(self, input_channels=3):
+    def __init__(self, input_channels=3, num_classes=1):
         super().__init__()
         self.backbone = Xception3DBackbone(input_channels=input_channels)
         self.pool = nn.AdaptiveAvgPool3d((1, 1, 1))
-        self.fc = nn.Linear(2048, 1)
+        self.fc = nn.Linear(2048, num_classes)
     
     def forward(self, x):
         features = self.backbone(x)                # (B, 2048, T', H', W')
         pooled = self.pool(features)               # (B, 2048, 1, 1, 1)
         pooled_flat = pooled.view(x.size(0), -1)   # (B, 2048)
-        logits = self.fc(pooled_flat)              # (B, 1)
+        logits = self.fc(pooled_flat)              # (B, num_classes)
         return logits
