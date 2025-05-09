@@ -37,7 +37,7 @@ class DeepfakeClassifier(L.LightningModule):
         elif self.hparams.model_name == "xception3d":
             # N.B: This model requires input with shape (B, C, T, H, W)
             self.model = Xception3D.Xception3DClassifier(**self.hparams.model_params)
-        elif self.hparams.model_name == "videoTransformer":
+        elif self.hparams.model_name == "VideoTransformer":
             # N.B: This model requires input with shape (B, C, T, H, W)
             self.model = VideoTransformer.VideoTransformer(**self.hparams.model_params)
         else:
@@ -73,8 +73,8 @@ class DeepfakeClassifier(L.LightningModule):
 
         acc_metric = getattr(self, f"{stage}_acc")
         acc_metric.update(preds, target)
-        self.log(f'{stage}_acc', acc_metric, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-        self.log(f'{stage}_loss', loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log(f'{stage}_acc', acc_metric, on_step=(stage == 'train'), on_epoch=True, prog_bar=True, logger=True)
+        self.log(f'{stage}_loss', loss, on_step=(stage == 'train'), on_epoch=True, prog_bar=True, logger=True)
 
         return loss
 
@@ -89,9 +89,9 @@ class DeepfakeClassifier(L.LightningModule):
     
     def configure_optimizers(self):
         if self.hparams.optimizer_name.lower() == "adam":
-            optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.learning_rate)
+            optimizer = torch.optim.AdamW(self.parameters(), **self.hparams.optimizer_params)
         elif self.hparams.optimizer_name.lower() == "sgd":
-            optimizer = torch.optim.SGD(self.parameters(), lr=self.hparams.learning_rate, momentum=self.hparams.momentum)
+            optimizer = torch.optim.SGD(self.parameters(), **self.hparams.optimizer_params)
         else:
             raise ValueError(f"Optimizer {self.hparams.optimizer_name} not supported")
         

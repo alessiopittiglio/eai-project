@@ -35,8 +35,11 @@ class PatchEmbedding3D(nn.Module):
         patches = patches.flatten(2).transpose(1, 2)  # [B, N, E]
         # Initialize positional embeddings if necessary
         if self.pos_embed is None or self.pos_embed.shape[1] != num_patches + 1:
-            self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, E))
-            nn.init.trunc_normal_(self.pos_embed, std=0.02)
+            pe = nn.Parameter(
+            torch.zeros(1, num_patches + 1, E, device=x.device)
+            )
+            nn.init.trunc_normal_(pe, std=0.02)
+            self.pos_embed = pe
         # Expand class token
         cls_tokens = self.cls_token.expand(B, -1, -1)  # [B, 1, E]
         x = torch.cat((cls_tokens, patches), dim=1)  # [B, N+1, E]

@@ -44,6 +44,7 @@ def main(config):
         num_workers=config['data']['num_workers'],
         transform_config=config['data']['transform'],
     )
+    data_module.setup("fit")
 
     # Define the model
     model = DeepfakeClassifier(
@@ -52,16 +53,16 @@ def main(config):
         model_params=config['model']['model_params'],
         criterion_name=config['model']['criterion_name'],
         criterion_params=config['model']['criterion_params'],
-        optimizer_name=config['optimizer']['optimizer_name'],
-        optimizer_params=config['optimizer']['optimizer_params'],
-        use_scheduler=config['optimizer']['use_scheduler'],
-        scheduler_name=config['optimizer']['scheduler_name'],
-        scheduler_params=config['optimizer']['scheduler_params'],
+        optimizer_name=config['model']['optimizer_name'],
+        optimizer_params=config['model']['optimizer_params'],
+        use_scheduler=config['model']['use_scheduler'],
+        scheduler_name=config['model']['scheduler_name'],
+        scheduler_params=config['model']['scheduler_params'],
         accuracy_task=config['model']['accuracy_task'],
         accuracy_task_params=config['model']['accuracy_task_params'],
         
         # total_steps = num_epochs * (num_training_samples // batch_size)
-        scheduler_total_steps=config['trainer']['max_epochs'] * (data_module.num_train_samples // config['data']['batch_size']),
+        scheduler_total_steps=config['trainer']['max_epochs'] * (len(data_module.train_dataset) // config['data']['batch_size']),
     )
 
     # Load the model weights if specified
