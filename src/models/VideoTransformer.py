@@ -89,23 +89,3 @@ class VideoTransformer(nn.Module):
         x = self.norm(cls_token_final)  # [B, E]
         logits = self.head(x)           # [B, num_classes]
         return logits
-
-
-# Example usage
-if __name__ == "__main__":
-    model = VideoTransformer(
-        image_size=(224, 224),
-        num_frames=16,
-        in_channels=3,
-        patch_size=(2, 16, 16),
-        embed_dim=768,
-        depth=12,
-        num_heads=12,
-        mlp_ratio=4.0,
-        dropout=0.1,
-        num_classes=2
-    )
-    # Dummy video batch: batch of 2 videos, 3 channels, 16 frames, 224x224
-    dummy_video = torch.randn(2, 3, 16, 224, 224)
-    logits = model(dummy_video)
-    print("Output logits shape:", logits.shape)  # Expect [2, 2]

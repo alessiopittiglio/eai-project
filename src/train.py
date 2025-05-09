@@ -48,11 +48,20 @@ def main(config):
     # Define the model
     model = DeepfakeClassifier(
         model_name=config['model']['model_name'],
-        learning_rate=config['model']['learning_rate'],
-        momentum=config['model']['momentum'],
-        optimizer_name=config['model']['optimizer_name'],
-        use_scheduler=config['model']['use_scheduler'],
-        **config['model']['sched_params'],
+        num_classes=config['model']['num_classes'],
+        model_params=config['model']['model_params'],
+        criterion_name=config['model']['criterion_name'],
+        criterion_params=config['model']['criterion_params'],
+        optimizer_name=config['optimizer']['optimizer_name'],
+        optimizer_params=config['optimizer']['optimizer_params'],
+        use_scheduler=config['optimizer']['use_scheduler'],
+        scheduler_name=config['optimizer']['scheduler_name'],
+        scheduler_params=config['optimizer']['scheduler_params'],
+        accuracy_task=config['model']['accuracy_task'],
+        accuracy_task_params=config['model']['accuracy_task_params'],
+        
+        # total_steps = num_epochs * (num_training_samples // batch_size)
+        scheduler_total_steps=config['trainer']['max_epochs'] * (data_module.num_train_samples // config['data']['batch_size']),
     )
 
     # Load the model weights if specified

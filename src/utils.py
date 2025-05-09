@@ -12,14 +12,15 @@ def build_transforms(config: dict, augment: bool) -> T.Compose:
     """
     
     # Retrieve params
-    img_size = config.get('img_size', 224)
+    config_img_size = config.get('img_size', 224)
+    img_size = (config_img_size, config_img_size) if isinstance(config_img_size, int) else config_img_size
     norm_mean = config.get('norm_mean', (0.485, 0.456, 0.406))
     norm_std = config.get('norm_std', (0.229, 0.224, 0.225))
     should_augment = augment and config.get('train_augmentations', True)
     
     # Define the transformations
     transforms_list = [
-        T.Resize((img_size, img_size))
+        T.Resize(img_size)
         ]
     
     # Add augmentations if in training mode
