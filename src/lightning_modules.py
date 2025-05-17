@@ -115,6 +115,8 @@ class DeepfakeClassifier(L.LightningModule):
         if self.hparams.use_scheduler:
             if self.hparams.scheduler_name.lower() == "step":
                 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, **self.hparams.scheduler_params)
+            elif self.hparams.scheduler_name.lower() == "plateau":
+                scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, **self.hparams.scheduler_params)
             if self.hparams.scheduler_name.lower() == "warmup":
                 scheduler = get_linear_schedule_with_warmup(
                     optimizer,
