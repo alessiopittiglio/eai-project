@@ -46,6 +46,9 @@ class DeepfakeClassifier(L.LightningModule):
         if self.hparams.criterion_name.lower() == "bce_logit_loss":
             self.criterion = nn.BCEWithLogitsLoss(**self.hparams.criterion_params)
         elif self.hparams.criterion_name.lower() == "cross_entropy":
+            if 'weight' in self.hparams.criterion_params:
+                weight = torch.tensor(self.hparams.criterion_params['weight'])
+                self.hparams.criterion_params['weight'] = weight
             self.criterion = nn.CrossEntropyLoss(**self.hparams.criterion_params)
         else:
             raise ValueError(f"Criterion {self.hparams.criterion_name} not implemdented")
