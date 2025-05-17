@@ -68,6 +68,13 @@ To stop the process, use:
 kill <process_id>
 ```
 
+## Model benchmarks
+This table summarizes the performance of different models.
+
+| Model Name | Dataset                | Input Type      | Test Acc. | Test AUC | Checkpoint     | Config                                  | Date       |
+|------------|------------------------|-----------------|-----------|----------|----------------|-----------------------------------------|------------|
+| Xception3D | FF++ (c23, DF vs Orig) | Sequence (T=16) | 0.895     | 0.549    | [ Download ](https://drive.google.com/file/d/1JLvy7AzOIjjGiHes0JdFEZZdF1eOIEHo/view?usp=sharing) | [ View ]( config/xception3d_ffpp.yaml ) | 2025-05-15 |
+
 ## References
 
 1. Chollet, F. (2017). *Xception: Deep Learning with Depthwise Separable Convolutions* [Preprint]. arXiv. https://arxiv.org/abs/1610.02357
