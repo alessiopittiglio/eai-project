@@ -88,12 +88,18 @@ class DeepfakeClassifier(L.LightningModule):
         return self._common_step(batch, batch_idx, "test")
     
     def configure_optimizers(self):
-        if self.hparams.optimizer_name.lower() == "adam":
-            optimizer = torch.optim.AdamW(self.parameters(), **self.hparams.optimizer_params)
-        elif self.hparams.optimizer_name.lower() == "sgd":
-            optimizer = torch.optim.SGD(self.parameters(), **self.hparams.optimizer_params)
-        else:
-            raise ValueError(f"Optimizer {self.hparams.optimizer_name} not supported")
+        optimizers = {
+            "adam": torch.optim.Adam,
+            "adamw": torch.optim.AdamW,
+            "sgd": torch.optim.SGD,
+        }
+        
+        optimizer_name = self.hparams.optimizer_name.lower()
+        if optimizer_name not in optimizers:
+            raise ValueError(f"Optimizer {optimizer_name} not supported")
+        
+        optimizer_class = optimizers[optimizer_name]
+        optimizer = optimizer_class(self.parameters(), **self.hparams.optimizer_params)
         
         if self.hparams.use_scheduler:
             if self.hparams.scheduler_name.lower() == "step":
