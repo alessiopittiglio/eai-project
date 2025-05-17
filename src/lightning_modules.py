@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import lightning as L
-from torchmetrics import Accuracy
+from torchmetrics import Accuracy, AUROC
 from models import ResNet18, Xception3D, VideoTransformer
 from transformers import get_linear_schedule_with_warmup
 
@@ -56,6 +56,10 @@ class DeepfakeClassifier(L.LightningModule):
         self.train_acc = Accuracy(task=self.hparams.accuracy_task, **self.hparams.accuracy_task_params)
         self.val_acc = Accuracy(task=self.hparams.accuracy_task, **self.hparams.accuracy_task_params)
         self.test_acc = Accuracy(task=self.hparams.accuracy_task, **self.hparams.accuracy_task_params)
+
+        self.train_auc = AUROC(task=self.hparams.accuracy_task, **self.hparams.accuracy_task_params)
+        self.val_auc = AUROC(task=self.hparams.accuracy_task, **self.hparams.accuracy_task_params)
+        self.test_auc = AUROC(task=self.hparams.accuracy_task, **self.hparams.accuracy_task_params)
         
     
     def forward(self, x):
@@ -78,6 +82,10 @@ class DeepfakeClassifier(L.LightningModule):
         acc_metric.update(preds, target)
         self.log(f'{stage}_acc', acc_metric, on_step=(stage == 'train'), on_epoch=True, prog_bar=True, logger=True)
         self.log(f'{stage}_loss', loss, on_step=(stage == 'train'), on_epoch=True, prog_bar=True, logger=True)
+
+        auc_metric = getattr(self, f"{stage}_auc")
+        auc_metric.update(preds, target)
+        self.log(f'{stage}_auc', auc_metric, on_step=(stage == 'train'), on_epoch=True, prog_bar=True, logger=True)
 
         return loss
 
