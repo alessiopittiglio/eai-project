@@ -2,13 +2,13 @@ import torchvision.transforms as T
 
 def build_transforms(config: dict, augment: bool) -> T.Compose:
     """
-
     Args:
-        config (dict): _config dictionary containing the parameters for the transformations
-        augment (bool): _whether to apply augmentations or not
+        config (dict): Dictionary containing the parameters for the
+            transformations
+        augment (bool): Whether to apply augmentations or not
 
     Returns:
-        T.Compose: _composed transformation
+        T.Compose: Composed transformation
     """
     
     # Retrieve params
