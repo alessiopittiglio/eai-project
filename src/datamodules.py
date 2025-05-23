@@ -5,6 +5,8 @@ from torch.utils.data import DataLoader, Dataset
 from typing import Dict, Optional, Any
 from utils import build_transforms
 
+from collections import defaultdict
+
 logger = logging.getLogger(__name__)
 
 class DeepfakeDataModule(L.LightningDataModule):
@@ -91,6 +93,8 @@ class DeepfakeDataModule(L.LightningDataModule):
         if stage == "predict":
             self.predict_dataset = self.dataset_class(split='predict', transform=self.eval_tfm, **common_args)
 
+        self._log_split_counts()
+        
     def _create_dataloader(self, dataset: Dataset, shuffle: bool) -> DataLoader:
         """
         Helper for creating a DataLoader with common parameters.
@@ -114,3 +118,20 @@ class DeepfakeDataModule(L.LightningDataModule):
 
     def predict_dataloader(self):
         return self._create_dataloader(self.predict_dataset, shuffle=False)
+    
+    def _log_split_counts(self):
+        """Log number of samples per class for each of train/val/test."""
+        # invert label_dirs so we can map int→name
+        inv_map = {v:k for k, v in self.hparams.label_dirs.items()}
+
+        for split in ("train", "val", "test"):
+            try:
+                ds = getattr(self, f"{split}_dataset")
+                counts = defaultdict(int)
+                for _, lbl in ds.samples:
+                    counts[inv_map[lbl]] += 1
+                # e.g. "[DataModule] train: real=123, fake=123"
+                counts_str = ", ".join(f"{cls}={cnt}" for cls, cnt in counts.items())
+                logger.info(f"[DeepfakeDataModule] {split}: {counts_str}")
+            except AttributeError:
+                logger.warning(f"[DeepfakeDataModule] {split} dataset not found. Skipping logging.")

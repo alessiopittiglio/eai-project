@@ -16,16 +16,15 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+from collections import defaultdict
+
 
 class BaseFramesDataset(Dataset):
     """
     Abstract base class for datasets built on frames pre-extracted from videos.
 
-    Args:
-        root_dir: Path to dataset root.
-        split: Sub-directory (e.g., 'train' or 'val').
-        label_dirs: Mapping from label directory name to integer label.
-        transform: Optional transform applied to each PIL image.
+    Now with automatic undersampling to balance all labels
+    down to the count of the least-represented label.
     """
 
     def __init__(
@@ -43,7 +42,9 @@ class BaseFramesDataset(Dataset):
         self.transform = transform or T.Compose([T.ToTensor()])
         self.split_dir = self.root_dir / self.split
 
+        # load, then balance
         self.samples: List[Tuple] = self._load_samples()
+        self._balance_samples()
         self._log_dataset_info()
 
     def _load_samples(self) -> List[Tuple]:
@@ -54,11 +55,41 @@ class BaseFramesDataset(Dataset):
         """
         raise NotImplementedError
 
+    def _balance_samples(self) -> None:
+        """
+        Undersample every class to the size of the smallest class.
+        """
+        logger.info(f"[Dataset: {self.__class__.__name__}] Balancing samples in {self.split_dir}")
+        # group samples by label
+        grouped: Dict[int, List[Tuple[Path, int]]] = defaultdict(list)
+        for sample in self.samples:
+            _, label = sample
+            grouped[label].append(sample)
+
+        # find minimum class size
+        min_count = min(len(samples) for samples in grouped.values())
+
+        # undersample each group
+        balanced = []
+        for label, samples in grouped.items():
+            if len(samples) > min_count:
+                balanced.extend(random.sample(samples, min_count))
+            else:
+                balanced.extend(samples)
+
+        random.shuffle(balanced)
+        self.samples = balanced
+
     def _log_dataset_info(self) -> None:
         if not self.samples:
             logger.warning(f"[Dataset: {self.__class__.__name__}] No samples found in {self.split_dir}")
         else:
-            logger.info(f"[Dataset: {self.__class__.__name__}] Loaded {len(self.samples)} samples from {self.split_dir}")
+            # report counts per class
+            counts = defaultdict(int)
+            for _, lbl in self.samples:
+                counts[lbl] += 1
+            counts_str = ", ".join(f"{lbl}={cnt}" for lbl, cnt in counts.items())
+            logger.info(f"[Dataset: {self.__class__.__name__}] Loaded {len(self.samples)} samples ({counts_str}) from {self.split_dir}")
 
     def __len__(self) -> int:
         return len(self.samples)
