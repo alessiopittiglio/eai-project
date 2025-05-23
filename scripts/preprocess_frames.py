@@ -8,6 +8,7 @@ from pathlib import Path
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from concurrent.futures import ProcessPoolExecutor
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,17 +18,9 @@ logger = logging.getLogger(__name__)
 def extract_frames(video_path: Path, num_frames: int = 16) -> list:
     """
     Extract `num_frames` evenly spaced frames from a video file.
-
-    Args:
-        video_path (Path): Path to the video file.
-        num_frames (int): Number of frames to extract.
-
-    Returns:
-        List of RGB frames as NumPy arrays.
     """
     frames = []
     cap = cv2.VideoCapture(str(video_path))
-
     if not cap.isOpened():
         logger.error(f"Unable to open video: {video_path}")
         return frames
@@ -60,10 +53,6 @@ def extract_frames(video_path: Path, num_frames: int = 16) -> list:
 def save_frames(frames: list, output_dir: Path) -> None:
     """
     Save a list of RGB frames as PNG images in the specified directory.
-
-    Args:
-        frames (list): List of RGB frames.
-        output_dir (Path): Directory where frames will be saved.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     for i, frame in enumerate(frames):
@@ -75,9 +64,6 @@ def save_frames(frames: list, output_dir: Path) -> None:
 def _process_single_video(task: dict) -> tuple:
     """
     Process a single video: extract frames and save them.
-
-    Returns:
-        Tuple of (status, video_id).
     """
     video_path = task['video_path']
     out_dir = task['output_dir']
@@ -96,14 +82,91 @@ def _process_single_video(task: dict) -> tuple:
     return 'processed', video_id
 
 
-def process_dfdc(video_source_dir: Path, metadata_path: Path,
-                 output_dir: Path, num_frames: int = 16,
-                 skip_existing: bool = True, workers: int = 4) -> None:
+def random_augment_image(img: np.ndarray) -> np.ndarray:
     """
-    Extract frames from DFDC dataset videos based on metadata.json.
+    Apply a random augmentation to a single RGB image.
+    """
+    # brightness jitter
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV).astype(np.float32)
+    factor = np.random.uniform(0.8, 1.2)
+    hsv[:, :, 2] = np.clip(hsv[:, :, 2] * factor, 0, 255)
+    img_aug = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2RGB)
+
+    # horizontal flip
+    if np.random.rand() < 0.5:
+        img_aug = np.fliplr(img_aug)
+
+    # rotation
+    angle = np.random.uniform(-15, 15)
+    h, w = img_aug.shape[:2]
+    M = cv2.getRotationMatrix2D((w / 2, h / 2), angle, 1.0)
+    img_aug = cv2.warpAffine(img_aug, M, (w, h), borderMode=cv2.BORDER_REFLECT)
+
+    return img_aug
+
+
+def augment_video_dir(src_dir: Path, dst_dir: Path) -> None:
+    """
+    Copy and augment all frames from `src_dir` into `dst_dir`.
+    """
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    frame_paths = sorted(p for p in src_dir.iterdir() if p.suffix.lower() in {'.png', '.jpg', '.jpeg'})
+    for fpath in frame_paths:
+        img = cv2.cvtColor(cv2.imread(str(fpath)), cv2.COLOR_BGR2RGB)
+        img_aug = random_augment_image(img)
+        out_bgr = cv2.cvtColor(img_aug, cv2.COLOR_RGB2BGR)
+        out_path = dst_dir / fpath.name
+        if not cv2.imwrite(str(out_path), out_bgr):
+            logger.warning(f"Failed saving augmented frame {out_path}")
+
+
+def augment_for_balance(dataset_root: Path) -> None:
+    """
+    For each split and label under `dataset_root`, undersample the majority
+    and then augment the minority by adding new samples until counts match.
+    """
+    logger.info(f"--- Starting augmentation for balance at {dataset_root} ---")
+    for split_dir in sorted(dataset_root.iterdir()):
+        if not split_dir.is_dir():
+            continue
+        # count samples per label (each subdir is one video sample)
+        label_dirs = [d for d in split_dir.iterdir() if d.is_dir()]
+        counts = {d.name: len([c for c in d.iterdir() if c.is_dir()]) for d in label_dirs}
+        if not counts:
+            continue
+
+        max_count = max(counts.values())
+        for label_dir in label_dirs:
+            label = label_dir.name
+            count = counts[label]
+            if count >= max_count:
+                logger.info(f"{split_dir.name}/{label}: {count} samples (no augmentation needed)")
+                continue
+            needed = max_count - count
+            logger.info(f"{split_dir.name}/{label}: {count} samples; augmenting {needed} to reach {max_count}")
+            existing = [d for d in label_dir.iterdir() if d.is_dir()]
+            for i in range(needed):
+                src = existing[np.random.randint(len(existing))]
+                aug_name = f"{src.stem}_aug{i+1:03d}"
+                dst = label_dir / aug_name
+                logger.info(f"  Augment #{i+1}/{needed} for {label}: {src.stem} → {aug_name}")
+                augment_video_dir(src, dst)
+    logger.info(f"--- Augmentation complete at {dataset_root} ---")
+
+
+def process_dfdc(video_source_dir: Path, 
+                 metadata_path: Path,
+                 output_dir: Path, 
+                 num_frames: int = 16,
+                 skip_existing: bool = True, 
+                 workers: int = 4,
+                 augment: bool = False,
+                 ) -> None:
+    """
+    Extract frames from DFDC dataset videos based on metadata.json,
+    then augment to balance classes.
     """
     logger.info("--- DFDC Dataset Processing ---")
-
     if not metadata_path.is_file():
         logger.error(f"Metadata not found: {metadata_path}")
         return
@@ -130,7 +193,6 @@ def process_dfdc(video_source_dir: Path, metadata_path: Path,
         })
 
     summary = {'processed': 0, 'skipped': 0, 'error': 0}
-    # Parallel extraction with progress bar
     with ProcessPoolExecutor(max_workers=workers) as executor:
         for status, _ in tqdm(
             executor.map(_process_single_video, tasks),
@@ -143,16 +205,27 @@ def process_dfdc(video_source_dir: Path, metadata_path: Path,
     for key, count in summary.items():
         logger.info(f"{key.title()}: {count}")
 
+    if augment:
+        # now balance by augmenting
+        augment_for_balance(output_dir / 'dfdc')
 
-def process_ffpp(orig_root: Path, manip_root: Path, output_dir: Path,
-                 num_frames: int = 16, val_size: float = 0.15,
-                 test_size: float = 0.15, random_state: int = 42,
-                 skip_existing: bool = True, workers: int = 4) -> None:
+
+def process_ffpp(orig_root: Path, 
+                 manip_root: Path, 
+                 output_dir: Path,
+                 num_frames: int = 16, 
+                 val_size: float = 0.15,
+                 test_size: float = 0.15,
+                 random_state: int = 42,
+                 skip_existing: bool = True, 
+                 workers: int = 4,
+                augment: bool = False,
+                 ) -> None:
     """
-    Extract frames from FF++ dataset, splitting into train/val/test.
+    Extract frames from FF++ dataset, split into train/val/test,
+    then augment to balance classes in each split.
     """
     logger.info("--- FF++ Dataset Processing ---")
-
     if not orig_root.is_dir() or not manip_root.is_dir():
         logger.error("Invalid FF++ directories.")
         return
@@ -179,9 +252,7 @@ def process_ffpp(orig_root: Path, manip_root: Path, output_dir: Path,
         test_df = pd.DataFrame(columns=df.columns)
 
     splits = {'train': train_df, 'val': val_df, 'test': test_df}
-    logger.info(
-        f"Splits -> Train: {len(train_df)}, Val: {len(val_df)}, Test: {len(test_df)}"
-    )
+    logger.info(f"Splits -> Train: {len(train_df)}, Val: {len(val_df)}, Test: {len(test_df)}")
 
     tasks = []
     for split_name, split_df in splits.items():
@@ -196,7 +267,6 @@ def process_ffpp(orig_root: Path, manip_root: Path, output_dir: Path,
             })
 
     summary = {'processed': 0, 'skipped': 0, 'error': 0}
-    # Parallel extraction with progress bar
     with ProcessPoolExecutor(max_workers=workers) as executor:
         for status, _ in tqdm(
             executor.map(_process_single_video, tasks),
@@ -208,6 +278,10 @@ def process_ffpp(orig_root: Path, manip_root: Path, output_dir: Path,
     logger.info("--- FF++ Summary ---")
     for key, count in summary.items():
         logger.info(f"{key.title()}: {count}")
+
+    if augment:
+        # now balance by augmenting
+        augment_for_balance(output_dir / 'ffpp')
 
 
 if __name__ == '__main__':
@@ -222,8 +296,9 @@ if __name__ == '__main__':
                         help="Frames to extract per video.")
     parser.add_argument('--skip_existing', action='store_true',
                         help="Skip videos if frames already exist.")
-    parser.add_argument('--workers', type=int, default=4,
-                        help="Parallel worker processes.")
+    parser.add_argument('--workers', type=int, default=os.cpu_count(),
+                        help="Parallel worker processes (default: number of CPU cores).")
+    parser.add_argument("--augment", action="store_true",)
 
     # DFDC args
     dfdc_group = parser.add_argument_group('DFDC')
@@ -256,7 +331,8 @@ if __name__ == '__main__':
             output_dir=out_path,
             num_frames=args.num_frames,
             skip_existing=args.skip_existing,
-            workers=args.workers
+            workers=args.workers,
+            augment=args.augment
         )
     else:
         process_ffpp(
@@ -268,7 +344,8 @@ if __name__ == '__main__':
             test_size=args.ffpp_test_size,
             random_state=args.ffpp_random_state,
             skip_existing=args.skip_existing,
-            workers=args.workers
+            workers=args.workers,
+            augment=args.augment
         )
 
     logger.info("Preprocessing completed.")
