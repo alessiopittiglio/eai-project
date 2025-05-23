@@ -1,4 +1,5 @@
 import argparse
+from collections import defaultdict
 import json
 import logging
 import cv2
@@ -107,11 +108,12 @@ def random_augment_image(img: np.ndarray) -> np.ndarray:
 
 def augment_video_dir(src_dir: Path, dst_dir: Path) -> None:
     """
-    Copy and augment all frames from `src_dir` into `dst_dir`.
+    Copy + augment all frames from `src_dir` → `dst_dir` once.
     """
     dst_dir.mkdir(parents=True, exist_ok=True)
-    frame_paths = sorted(p for p in src_dir.iterdir() if p.suffix.lower() in {'.png', '.jpg', '.jpeg'})
-    for fpath in frame_paths:
+    for fpath in sorted(src_dir.iterdir()):
+        if fpath.suffix.lower() not in {'.png','.jpg','.jpeg'}:
+            continue
         img = cv2.cvtColor(cv2.imread(str(fpath)), cv2.COLOR_BGR2RGB)
         img_aug = random_augment_image(img)
         out_bgr = cv2.cvtColor(img_aug, cv2.COLOR_RGB2BGR)
@@ -120,16 +122,36 @@ def augment_video_dir(src_dir: Path, dst_dir: Path) -> None:
             logger.warning(f"Failed saving augmented frame {out_path}")
 
 
-def augment_for_balance(dataset_root: Path) -> None:
+def _augment_task(task: dict) -> tuple:
     """
-    For each split and label under `dataset_root`, undersample the majority
-    and then augment the minority by adding new samples until counts match.
+    Single augmentation job: skip or perform.
+    Returns ('skipped'|'augmented', dst_dir).
     """
-    logger.info(f"--- Starting augmentation for balance at {dataset_root} ---")
+    src = task['src_dir']
+    dst = task['dst_dir']
+    skip_existing = task['skip_existing']
+
+    if skip_existing and dst.exists() and any(dst.iterdir()):
+        return 'skipped', dst
+
+    augment_video_dir(src, dst)
+    return 'augmented', dst
+
+
+def augment_for_balance(dataset_root: Path, skip_existing: bool, workers: int) -> None:
+    """
+    Build and run augmentation tasks in parallel so that each label
+    under each split of `dataset_root` is brought up to the max count.
+    """
+    logger.info(f"--- Augmentation for balance at {dataset_root} ---")
+    tasks = []
+
+    # gather jobs
     for split_dir in sorted(dataset_root.iterdir()):
         if not split_dir.is_dir():
             continue
-        # count samples per label (each subdir is one video sample)
+
+        # count how many sample‐dirs per label
         label_dirs = [d for d in split_dir.iterdir() if d.is_dir()]
         counts = {d.name: len([c for c in d.iterdir() if c.is_dir()]) for d in label_dirs}
         if not counts:
@@ -142,16 +164,34 @@ def augment_for_balance(dataset_root: Path) -> None:
             if count >= max_count:
                 logger.info(f"{split_dir.name}/{label}: {count} samples (no augmentation needed)")
                 continue
+
             needed = max_count - count
-            logger.info(f"{split_dir.name}/{label}: {count} samples; augmenting {needed} to reach {max_count}")
+            logger.info(f"{split_dir.name}/{label}: {count} samples; will augment {needed} more to reach {max_count}")
+
             existing = [d for d in label_dir.iterdir() if d.is_dir()]
             for i in range(needed):
                 src = existing[np.random.randint(len(existing))]
                 aug_name = f"{src.stem}_aug{i+1:03d}"
                 dst = label_dir / aug_name
-                logger.info(f"  Augment #{i+1}/{needed} for {label}: {src.stem} → {aug_name}")
-                augment_video_dir(src, dst)
-    logger.info(f"--- Augmentation complete at {dataset_root} ---")
+                logger.debug(f"  Queuing augmentation {split_dir.name}/{label}: {src.stem} → {aug_name}")
+                tasks.append({
+                    'src_dir': src,
+                    'dst_dir': dst,
+                    'skip_existing': skip_existing
+                })
+
+    # run in parallel
+    summary = defaultdict(int)
+    with ProcessPoolExecutor(max_workers=workers) as exe:
+        for status, dst in tqdm(exe.map(_augment_task, tasks), total=len(tasks), desc="Augmenting"):
+            summary[status] += 1
+            logger.info(f"Augmentation {status}: {dst}")
+
+    # report
+    logger.info("--- Augmentation Summary ---")
+    for key, cnt in summary.items():
+        logger.info(f"{key.title()}: {cnt}")
+    logger.info(f"--- Done augmenting {dataset_root} ---")
 
 
 def process_dfdc(video_source_dir: Path, 
@@ -207,7 +247,7 @@ def process_dfdc(video_source_dir: Path,
 
     if augment:
         # now balance by augmenting
-        augment_for_balance(output_dir / 'dfdc')
+        augment_for_balance(output_dir / 'dfdc', skip_existing=skip_existing, workers=workers)
 
 
 def process_ffpp(orig_root: Path, 
@@ -281,7 +321,7 @@ def process_ffpp(orig_root: Path,
 
     if augment:
         # now balance by augmenting
-        augment_for_balance(output_dir / 'ffpp')
+        augment_for_balance(output_dir / 'ffpp', skip_existing=skip_existing, workers=workers)
 
 
 if __name__ == '__main__':
