@@ -54,9 +54,12 @@ model:
   # Parameters for learning rate scheduler
   use_scheduler: true
   scheduler_name: "step"
-  sched_params:
+  scheduler_params:
     step_size: 2
     gamma: 0.94
+
+  accuracy_task: "binary"
+  accuracy_task_params: {}
 
 # -----------------------------------------------------------------------------------------------------
 # Settings for the PyTorch Lightning Trainer
