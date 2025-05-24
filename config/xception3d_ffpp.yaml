@@ -14,15 +14,15 @@ data:
   label_dirs:
     REAL: 0
     FAKE: 1
-  load_sequences: True           # Default: false (loads single frames [C,H,W])
+  load_sequences: True            # Default: false (loads single frames [C,H,W])
   sequence_length: 16             # Used if load_sequences: true (sequence length T)
   sampling_stride: 1              # Used if load_sequences: true (stride between frames in sequence)
   max_frames_per_video: null      # Optional: max frames per video (for SingleFrameDataset)
   max_videos_per_split: null      # Optional: max videos per split (for SequenceDataset)
 
   # DataLoader parameters
-  batch_size: 2
-  num_workers: 4
+  batch_size: 32
+  num_workers: 8
 
   # Parameters for building transforms
   transform:
@@ -36,27 +36,32 @@ data:
 # -----------------------------------------------------------------------------------------------------
 model:
   model_name: xception3d
-  num_classes: 1
-  
-  model_params: {}
+  num_classes: 2
+  model_params:
+    num_classes: 2
 
   # Parameters for criterion
-  criterion_name: "bce_logit_loss"
-  criterion_params: {}
+  criterion_name: "cross_entropy"
+  criterion_params: {
+    weight: [4.7, 0.56]
+  }
 
   # Parameters for optimizer and scheduler
-  optimizer_name: "sgd"
+  optimizer_name: "adamW"
   optimizer_params:
+    lr: 0.0001
     weight_decay: 0.01
-    lr: 0.045
-    momentum: 0.9
 
   # Parameters for learning rate scheduler
   use_scheduler: true
-  scheduler_name: "step"
+  scheduler_name: "plateau"
   scheduler_params:
-    step_size: 2
-    gamma: 0.94
+    factor: 0.1
+    patience: 5
+
+  accuracy_task: "multiclass"
+  accuracy_task_params:
+    num_classes: 2
 
   accuracy_task: "binary"
   accuracy_task_params: {}
@@ -66,10 +71,10 @@ model:
 # -----------------------------------------------------------------------------------------------------
 trainer:
   accelerator: "auto"
-  devices: 2
+  devices: "auto"
   precision: bf16-mixed
   deterministic: false
-  max_epochs: 250
+  max_epochs: 5
   callbacks:
     early_stopping:
       patience: 10
