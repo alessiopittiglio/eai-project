@@ -12,7 +12,7 @@ import numpy as np
 from PIL import Image
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-MODEL_CHECKPOINT_PATH = "path/to/your/model/checkpoint.ckpt"
+MODEL_CHECKPOINT_PATH = "/cluster/home/robergio/ondemand/giordanopittiglio2425/outputs/xception3d/lightning_logs/version_20/checkpoints/epoch=04-val_loss=0.34.ckpt"
 
 IMG_SIZE = 224
 NORM_MEAN = (0.485, 0.456, 0.406)

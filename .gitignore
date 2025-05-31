@@ -10,3 +10,6 @@ models/*/metrics/
 models/*/runs/
 outputs/
 wandb/
+
+logs
+scripts_run
