@@ -1,0 +1,54 @@
+seed: 42
+
+output_dir: "./outputs"
+
+project_name: "deepfake‐hf‐finetune"
+
+data:
+  data_dir: "/path/to/your/images"
+  label_dirs:
+    fake: "fake_videos"
+    real: "real_videos"
+  load_sequences: false
+  sequence_length: 1           # since we’re fine‐tuning a frame‐based model
+  sampling_stride: 1
+  max_frames_per_video: 10
+  max_videos_per_split: 1000   # or whatever you want
+  batch_size: 16
+  num_workers: 4
+
+  # Make sure these transforms match what your HF model expects:
+  transform:
+    resize: 256
+    center_crop: 224
+    normalize_mean: [0.5, 0.5, 0.5]      # e.g. ViT‐in‐21k / generic
+    normalize_std:  [0.5, 0.5, 0.5]
+
+model:
+  # Pick any HF image classification model, e.g. a ViT pretrained on ImageNet‐21k
+  model_name: "google/vit-base-patch16-224-in21k"
+  num_classes: 2                       # e.g. real vs fake
+  learning_rate: 5e-5
+  weight_decay: 0.01
+  use_scheduler: true
+  scheduler_name: "linear_warmup"
+  scheduler_params:
+    warmup_steps: 500
+
+trainer:
+  accelerator: "gpu"
+  devices: 1
+  precision: 16                      # try 16‐bit if you have a modern GPU
+  max_epochs: 5
+  callbacks:
+    early_stopping:
+      patience: 3
+
+logger:
+  type: "tensorboard"                # or "wandb"
+
+# -----------------------------------------------------------------------------
+# Settings for the execution
+# -----------------------------------------------------------------------------
+
+output_dir: "./outputs"
