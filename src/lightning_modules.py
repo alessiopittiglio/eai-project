@@ -3,7 +3,7 @@ import torch.nn as nn
 import lightning as L
 from torchmetrics import Accuracy, AUROC
 from models import ResNet18, Xception3D, VideoTransformer
-from transformers import get_linear_schedule_with_warmup
+from transformers import AutoModelForImageClassification, get_linear_schedule_with_warmup
 
 class DeepfakeClassifier(L.LightningModule):
     def __init__(
@@ -135,3 +135,127 @@ class DeepfakeClassifier(L.LightningModule):
             }
         else:
             return optimizer
+
+from transformers import AutoModelForImageClassification
+import pytorch_lightning as pl
+import torchmetrics
+from torchmetrics.classification import BinaryAUROC, Accuracy
+import torch.nn as nn
+import torch.nn.functional as F
+
+class DeepFakeFinetuningLightningModule(pl.LightningModule):
+    def __init__(self, cfg, class_counts):
+        super().__init__()
+        cfg["class_counts"] = class_counts  # Store for later use
+        self.save_hyperparameters(cfg)
+
+        # 1) Load pretrained model
+        self.model = AutoModelForImageClassification.from_pretrained(
+            cfg["model_name"], trust_remote_code=True
+        )
+
+        # 2) Replace classification head with a 2‐class head
+        # We assume the backbone's final feature size is in config.hidden_size
+        hidden_size = self.model.model.head.in_features
+        self.model.model.head = nn.Linear(hidden_size, cfg["num_classes"])
+        # (If using another architecture, adjust accordingly.)
+
+        # 3) Prepare class weights for weighted cross‐entropy
+        # class_counts is a dict: {idx_real: count_real, idx_fake: count_fake}
+        idx_real = list(class_counts.keys())[0]
+        idx_fake = list(class_counts.keys())[1]
+        count_real = class_counts[idx_real]
+        count_fake = class_counts[idx_fake]
+        total = count_real + count_fake
+        # weight[c] = total/(num_classes * count[c])
+        w_real = total / (cfg["num_classes"] * count_real)
+        w_fake = total / (cfg["num_classes"] * count_fake)
+        # But we need to map them to [weight_for_label0, weight_for_label1]
+        weights = torch.zeros(cfg["num_classes"], dtype=torch.float)
+        weights[idx_real] = w_real
+        weights[idx_fake] = w_fake
+        self.register_buffer("class_weights", weights)
+
+        # 4) Metrics
+        self.train_acc = Accuracy(task="multiclass", num_classes=cfg["num_classes"])
+        self.val_acc = Accuracy(task="multiclass", num_classes=cfg["num_classes"])
+        self.test_acc = Accuracy(task="multiclass", num_classes=cfg["num_classes"])
+
+        self.train_auroc = BinaryAUROC()
+        self.val_auroc = BinaryAUROC()
+        self.test_auroc = BinaryAUROC()
+
+    def forward(self, x):
+        # x: [B,3,H,W]
+        outputs = self.model(x)
+        # HuggingFace returns a dict with "logits"
+        return outputs["logits"]
+
+    def configure_optimizers(self):
+        # Differential learning rates: backbone vs new head
+        backbone_params = []
+        head_params = []
+        for name, param in self.model.named_parameters():
+            if "head" in name:
+                head_params.append(param)
+            else:
+                backbone_params.append(param)
+
+        optimizer = torch.optim.AdamW(
+            [
+                {"params": backbone_params, "lr": self.hparams["backbone_lr"]},
+                {"params": head_params, "lr": self.hparams["head_lr"]},
+            ],
+            weight_decay=self.hparams["weight_decay"],
+        )
+        return optimizer
+
+    def training_step(self, batch, batch_idx):
+        imgs, labels = batch  # imgs: [B,3,H,W], labels: [B]
+        logits = self.forward(imgs)
+        loss = F.cross_entropy(logits, labels, weight=self.class_weights)
+
+        preds = torch.argmax(logits, dim=1)
+        # For AUROC, get probability of positive class (label==idx_fake)
+        prob_pos = torch.softmax(logits, dim=1)[:, 1]
+
+        # Update metrics
+        self.train_acc.update(preds, labels)
+        self.train_auroc.update(prob_pos, labels)
+
+        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=False, sync_dist=True)
+        self.log("train_acc", self.train_acc, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log("train_auroc", self.train_auroc, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        imgs, labels = batch
+        logits = self.forward(imgs)
+        loss = F.cross_entropy(logits, labels, weight=self.class_weights)
+
+        preds = torch.argmax(logits, dim=1)
+        prob_pos = torch.softmax(logits, dim=1)[:, 1]
+
+        self.val_acc.update(preds, labels)
+        self.val_auroc.update(prob_pos, labels)
+
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log("val_acc", self.val_acc, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log("val_auroc", self.val_auroc, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        return loss
+
+    def test_step(self, batch, batch_idx):
+        imgs, labels = batch
+        logits = self.forward(imgs)
+        loss = F.cross_entropy(logits, labels, weight=self.class_weights)
+
+        preds = torch.argmax(logits, dim=1)
+        prob_pos = torch.softmax(logits, dim=1)[:, 1]
+
+        self.test_acc.update(preds, labels)
+        self.test_auroc.update(prob_pos, labels)
+
+        self.log("test_loss", loss, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log("test_acc", self.test_acc, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log("test_auroc", self.test_auroc, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        return loss

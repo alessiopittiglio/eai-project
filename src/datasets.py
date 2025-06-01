@@ -44,7 +44,7 @@ class BaseFramesDataset(Dataset):
 
         # load, then balance
         self.samples: List[Tuple] = self._load_samples()
-        self._balance_samples()
+        # self._balance_samples()
         self._log_dataset_info()
 
     def _load_samples(self) -> List[Tuple]:
