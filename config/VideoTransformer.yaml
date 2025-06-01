@@ -78,7 +78,7 @@ model:
 # -----------------------------------------------------------------------------------------------------
 trainer:
   accelerator: "auto"
-  devices: "auto"
+  devices: 4
   precision: bf16-mixed
   deterministic: false
   max_epochs: 250

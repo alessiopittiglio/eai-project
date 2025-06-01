@@ -1,0 +1,39 @@
+# config.yaml
+
+# 1) Paths
+data_dir: "./data_frames/ffpp"           # should contain train/, val/, test/, each with REAL/ and FAKE/ subfolders
+output_dir: "./outputs"                # base folder for TensorBoard logs and checkpoints
+name_model: "MambaVision"         # name under ./outputs/, e.g. ./outputs/DeepFakeDetector
+
+# 2) Model / Pretraining
+model_name: "nvidia/MambaVision-T-1K"  # HuggingFace name
+num_classes: 2                         # REAL vs FAKE
+backbone_lr: 0.00001                      # small LR for backbone
+head_lr: 0.0001                          # learning rate for new classification head
+weight_decay: 0.01
+
+# 3) Data & Transforms
+image_size_width: 720                        # input size 
+image_size_height: 540                       # input size 
+batch_size: 32
+num_workers: 8
+
+# Imbalance handling (choose one)
+downsample: true                       # if true, undersample fake => equal REAL vs FAKE
+upsample: false                        # if true, oversample REAL via WeightedRandomSampler
+upsample_fraction: 1.0                 # fraction of FAKES to use; real will be duplicated to match this fraction*fake_count
+augment_real: true                     # if upsample: apply data augmentation to REAL images
+
+# 4) Training
+devices: "auto"
+precision: bf16-mixed
+max_epochs: 20
+# resume_from_checkpoint: "/cluster/home/robergio/ondemand/giordanopittiglio2425/src/outputs/DeepFakeDetector/version_2/last.ckpt"
+
+early_stopping: true                  # if true, stop training if no improvement in "monitor_metric" for "patience" epochs
+early_stop_patience: 5                # number of epochs with no improvement before stopping
+
+# 5) Checkpoint & Logging
+monitor_metric: "val_loss"             # metric to monitor for "best" checkpoint
+mode: "min"                            # "min" for loss, "max" for AUROC
+seed: 42                              # random seed for reproducibility

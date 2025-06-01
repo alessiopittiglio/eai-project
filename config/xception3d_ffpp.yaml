@@ -10,7 +10,7 @@ seed: 42
 # Data Configuration (for DeepfakeDataModule)
 # -----------------------------------------------------------------------------------------------------
 data:
-  data_dir: data_frames/ffpp          
+  data_dir: data_frames/ffpp    
   label_dirs:
     REAL: 0
     FAKE: 1
@@ -21,7 +21,7 @@ data:
   max_videos_per_split: null      # Optional: max videos per split (for SequenceDataset)
 
   # DataLoader parameters
-  batch_size: 32
+  batch_size: 2
   num_workers: 8
 
   # Parameters for building transforms
@@ -36,9 +36,9 @@ data:
 # -----------------------------------------------------------------------------------------------------
 model:
   model_name: xception3d
-  num_classes: 2
+  num_classes: 2 #common step criterion and sigmoid
   model_params:
-    num_classes: 2
+    num_classes: 2 #Testa del modello
 
   # Parameters for criterion
   criterion_name: "cross_entropy"
@@ -61,10 +61,10 @@ model:
 
   accuracy_task: "multiclass"
   accuracy_task_params:
-    num_classes: 2
+    num_classes: 2 #accuracy
 
-  accuracy_task: "binary"
-  accuracy_task_params: {}
+  # accuracy_task: "binary"
+  # accuracy_task_params: {}
 
 # -----------------------------------------------------------------------------------------------------
 # Settings for the PyTorch Lightning Trainer
@@ -74,7 +74,7 @@ trainer:
   devices: "auto"
   precision: bf16-mixed
   deterministic: false
-  max_epochs: 5
+  max_epochs: 250
   callbacks:
     early_stopping:
       patience: 10
