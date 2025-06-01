@@ -343,9 +343,9 @@ if __name__ == '__main__':
     # DFDC args
     dfdc_group = parser.add_argument_group('DFDC')
     dfdc_group.add_argument('--dfdc_metadata_path', type=str,
-                             default='./data/metadata.json', help="DFDC metadata.json")
+                             default='./data/DeepFakeDataset/metadata.json', help="DFDC metadata.json")
     dfdc_group.add_argument('--dfdc_video_dir', type=str,
-                             default='./data/dfdc_videos', help="DFDC video files dir.")
+                             default='./data/DeepFakeDataset', help="DFDC video files dir.")
 
     # FF++ args
     ffpp_group = parser.add_argument_group('FF++')
