@@ -1,5 +1,3 @@
-# Cell 2: Imports
-
 import argparse
 import logging
 import os
