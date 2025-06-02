@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+from torchmetrics.classification import BinaryAUROC, Accuracy
 import lightning as L
 from torchmetrics import Accuracy, AUROC
 from models import ResNet18, Xception3D, VideoTransformer
@@ -134,11 +136,6 @@ class DeepfakeClassifier(L.LightningModule):
         else:
             return optimizer
 
-from transformers import AutoModelForImageClassification
-import torchmetrics
-from torchmetrics.classification import BinaryAUROC, Accuracy
-import torch.nn as nn
-import torch.nn.functional as F
 
 class DeepFakeFinetuningLightningModule(L.LightningModule):
     def __init__(self, cfg, class_counts):
