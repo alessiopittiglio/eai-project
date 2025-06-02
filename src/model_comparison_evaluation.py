@@ -1,12 +1,10 @@
 import os
 import argparse
 import json
-import subprocess
 import random
 from pathlib import Path
 from tqdm import tqdm
 
-import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 from PIL import Image
