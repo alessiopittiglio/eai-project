@@ -4,7 +4,7 @@ import logging
 import yaml
 import torch
 from pathlib import Path
-from datamodules import DeepfakeDataModule
+from datamodules.base_datamodule import DeepfakeDataModule
 from lightning_modules import DeepfakeClassifier
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 

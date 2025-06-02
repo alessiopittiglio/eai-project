@@ -7,7 +7,7 @@ import yaml
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
 from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 from pathlib import Path
-from datamodules import DeepfakeDataModule
+from datamodules.base_datamodule import DeepfakeDataModule
 from lightning_modules import DeepfakeClassifier
 
 logging.basicConfig(level=logging.INFO)
@@ -131,9 +131,9 @@ if __name__ == "__main__":
     with open(parser.parse_args().config, 'r') as f:
         config = yaml.safe_load(f)
     
-    logger.info("-- Training arguments --")
-    for arg, value in sorted(config.items()):
-        logger.info(f"{arg}: {value}")
-    logger.info("--------------------------")
+    # logger.info("-- Training arguments --")
+    # for arg, value in sorted(config.items()):
+    #     logger.info(f"{arg}: {value}")
+    # logger.info("--------------------------")
 
     main(config)
