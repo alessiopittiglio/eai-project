@@ -45,6 +45,8 @@ def main(config):
         transform_config=config['data']['transform'],
     )
     data_module.setup("fit")
+    train_dataloader = data_module.train_dataloader()
+    num_batches_per_epoch = len(train_dataloader)
 
     # Define the model
     model = DeepfakeClassifier(
@@ -60,9 +62,9 @@ def main(config):
         scheduler_params=config['model']['scheduler_params'],
         accuracy_task=config['model']['accuracy_task'],
         accuracy_task_params=config['model']['accuracy_task_params'],
-        
-        # total_steps = num_epochs * (num_training_samples // batch_size)
-        scheduler_total_steps=config['trainer']['max_epochs'] * (len(data_module.train_dataset) // config['data']['batch_size']),
+        # total_steps = num_epochs * num_batches_per_epoch
+        scheduler_total_steps = config['trainer']['max_epochs'] * num_batches_per_epoch
+        # num_warmup_steps = warmup_ratio * scheduler_total_steps
     )
 
     # Load the model weights if specified
