@@ -135,13 +135,12 @@ class DeepfakeClassifier(L.LightningModule):
             return optimizer
 
 from transformers import AutoModelForImageClassification
-import pytorch_lightning as pl
 import torchmetrics
 from torchmetrics.classification import BinaryAUROC, Accuracy
 import torch.nn as nn
 import torch.nn.functional as F
 
-class DeepFakeFinetuningLightningModule(pl.LightningModule):
+class DeepFakeFinetuningLightningModule(L.LightningModule):
     def __init__(self, cfg, class_counts):
         super().__init__()
         cfg["class_counts"] = class_counts  # Store for later use
