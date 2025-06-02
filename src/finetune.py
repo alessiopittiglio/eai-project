@@ -21,7 +21,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor
 
 from collections import Counter  # <- aggiunto per il controllo per‐batch
-from datamodules.base_datamodule import DeepFakeFinetuningDataModule
+from datamodules.finetune_datamodule import DeepFakeFinetuningDataModule
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
