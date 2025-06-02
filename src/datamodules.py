@@ -140,7 +140,6 @@ class DeepfakeDataModule(L.LightningDataModule):
 # FINETUNING DATA MODULE
 
 from transformers import AutoModelForImageClassification
-import pytorch_lightning as pl
 
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from torchvision.datasets import ImageFolder
@@ -176,7 +175,7 @@ class CustomImageFolder(ImageFolder):
         return image, label
 
 
-class DeepFakeFinetuningDataModule(pl.LightningDataModule):
+class DeepFakeFinetuningDataModule(L.LightningDataModule):
     def __init__(self, cfg):
         super().__init__()
         self.model_name = cfg["model_name"]
