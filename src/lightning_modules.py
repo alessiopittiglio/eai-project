@@ -30,8 +30,6 @@ class DeepfakeClassifier(L.LightningModule):
         # and also to log them in the experiment tracker
         self.save_hyperparameters()
 
-        self.test_step_outputs = [] 
-
         if self.hparams.model_name == "resnet18_single_frame":
             self.model = ResNet18.ResNet18SingleFrame(**self.hparams.model_params)
         elif self.hparams.model_name == "xception3d":
