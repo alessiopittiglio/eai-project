@@ -1,5 +1,3 @@
-# config.yaml
-
 # 1) Paths
 data_dir: "./data_frames/ffpp"           # should contain train/, val/, test/, each with REAL/ and FAKE/ subfolders
 output_dir: "./outputs"                # base folder for TensorBoard logs and checkpoints
@@ -37,3 +35,12 @@ early_stop_patience: 5                # number of epochs with no improvement bef
 monitor_metric: "val_loss"             # metric to monitor for "best" checkpoint
 mode: "min"                            # "min" for loss, "max" for AUROC
 seed: 42                              # random seed for reproducibility
+
+dataset_type: "dfdc" 
+
+dfdc_main:
+  data_dir: "data_frames/DFDC/test"
+  metadata_path: "metadata.json"
+  frames_dir_name: "frames"
+  frames_per_video: 0 
+  val_split_ratio: 0.2
