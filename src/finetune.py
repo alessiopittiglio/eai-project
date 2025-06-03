@@ -10,13 +10,8 @@ from PIL import ImageFile
 from lightning_modules import DeepFakeFinetuningLightningModule
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-
-from pytorch_lightning import Trainer
-from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.callbacks import ModelCheckpoint
-
-
-from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor
+from lightning.pytorch.loggers import TensorBoardLogger
+from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
 
 from collections import Counter  # <- aggiunto per il controllo per‐batch
 from datamodules.finetune_datamodule import DeepFakeFinetuningDataModule
@@ -97,7 +92,7 @@ def main(cfg):
     # this is used for logging the learning rate during training
     lr_monitor = LearningRateMonitor(logging_interval="epoch")
 
-    trainer = Trainer(
+    trainer = L.Trainer(
         max_epochs=cfg["max_epochs"],
         logger=pl_logger,
         callbacks=[checkpoint_callback_best, checkpoint_callback_last, early_stop_callback, lr_monitor],
