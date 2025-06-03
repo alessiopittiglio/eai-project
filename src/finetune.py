@@ -52,12 +52,13 @@ def main(cfg):
     )
 
     # Test
-    test_labels = [lbl for _, lbl in dm.test_dataset.samples]
-    test_counter = Counter(test_labels)
-    logger.info(
-        f"Test: REAL = {test_counter[dm.test_dataset.idx_real]}, "
-        f"FAKE = {test_counter[dm.test_dataset.idx_fake]}"
-    )
+    if dm.test_dataset is not None:
+        test_labels = [lbl for _, lbl in dm.test_dataset.samples]
+        test_counter = Counter(test_labels)
+        logger.info(
+            f"Test: REAL = {test_counter[dm.test_dataset.idx_real]}, "
+            f"FAKE = {test_counter[dm.test_dataset.idx_fake]}"
+        )
 
     # 2.5) Per-batch class balance check in the training loader
     logger.info("\nChecking class balance per batch in the training loader:")
