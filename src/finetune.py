@@ -23,31 +23,41 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-torch.set_float32_matmul_precision('high')
+torch.set_float32_matmul_precision("high")
+
 
 def main(cfg):
     global logger
     # Set the random seed for reproducibility
-    L.seed_everything(cfg['seed'], workers=True)
-    
+    L.seed_everything(cfg["seed"], workers=True)
+
     # 1) Initialize DataModule
     dm = DeepFakeFinetuningDataModule(cfg)
     dm.setup()
 
     # 2) Get class counts from DataModule
     class_counts = dm.get_class_counts()
-    logger.info(f"Train: REAL = {class_counts[dm.train_dataset.idx_real]}, FAKE = {class_counts[dm.train_dataset.idx_fake]}")
+    logger.info(
+        f"Train: REAL = {class_counts[dm.train_dataset.idx_real]}, "
+        f"FAKE = {class_counts[dm.train_dataset.idx_fake]}"
+    )
 
     # If you also want val/test:
     # Val
     val_labels = [lbl for _, lbl in dm.val_dataset.samples]
     val_counter = Counter(val_labels)
-    logger.info(f"Val: REAL = {val_counter[dm.val_dataset.idx_real]}, FAKE = {val_counter[dm.val_dataset.idx_fake]}")
+    logger.info(
+        f"Val: REAL = {val_counter[dm.val_dataset.idx_real]}, "
+        f"FAKE = {val_counter[dm.val_dataset.idx_fake]}"
+    )
 
     # Test
     test_labels = [lbl for _, lbl in dm.test_dataset.samples]
     test_counter = Counter(test_labels)
-    logger.info(f"Test: REAL = {test_counter[dm.test_dataset.idx_real]}, FAKE = {test_counter[dm.test_dataset.idx_fake]}")
+    logger.info(
+        f"Test: REAL = {test_counter[dm.test_dataset.idx_real]}, "
+        f"FAKE = {test_counter[dm.test_dataset.idx_fake]}"
+    )
 
     # 2.5) Per-batch class balance check in the training loader
     logger.info("\nChecking class balance per batch in the training loader:")
@@ -74,7 +84,7 @@ def main(cfg):
         monitor=cfg["monitor_metric"],
         mode=cfg["mode"],
         dirpath=pl_logger.log_dir,
-        filename="best-{epoch:02d}-{"+cfg["monitor_metric"]+":.4f}",
+        filename="best-{epoch:02d}-{" + cfg["monitor_metric"] + ":.4f}",
         save_top_k=1,
     )
 
@@ -91,7 +101,7 @@ def main(cfg):
         patience=cfg.get("early_stop_patience", 5),
         verbose=True,
     )
-    
+
     # Define the learning rate monitor
     # this is used for logging the learning rate during training
     lr_monitor = LearningRateMonitor(logging_interval="epoch")
@@ -99,7 +109,12 @@ def main(cfg):
     trainer = L.Trainer(
         max_epochs=cfg["max_epochs"],
         logger=pl_logger,
-        callbacks=[checkpoint_callback_best, checkpoint_callback_last, early_stop_callback, lr_monitor],
+        callbacks=[
+            checkpoint_callback_best,
+            checkpoint_callback_last,
+            early_stop_callback,
+            lr_monitor,
+        ],
         devices=cfg["devices"],
         precision=cfg["precision"],
         default_root_dir=tb_log_dir,
@@ -117,25 +132,27 @@ def main(cfg):
     test_results = trainer.test(model, datamodule=dm)
     with open(os.path.join(pl_logger.log_dir, "test_results.yaml"), "w") as f:
         yaml.safe_dump(test_results, f)
-        
+
     # 8) Copy config to output directory
     with open(os.path.join(pl_logger.log_dir, "config.yaml"), "w") as f:
         yaml.safe_dump(cfg, f)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train Deepfake Detection Model")
 
-    parser.add_argument('--config', type=str, required=True,
-                        help="Path to the YAML configuration file")
-    
-    with open(parser.parse_args().config, 'r') as f:
+    parser.add_argument(
+        "--config", type=str, required=True, help="Path to the YAML configuration file"
+    )
+
+    with open(parser.parse_args().config, "r") as f:
         config = yaml.safe_load(f)
-    
+
     logger.info("-- Training arguments --")
     for arg, value in sorted(config.items()):
         logger.info(f"{arg}: {value}")
     logger.info("--------------------------")
-    
+
     # Create output directories
     tb_log_dir = os.path.join(config["output_dir"], config["name_model"])
     os.makedirs(tb_log_dir, exist_ok=True)
