@@ -13,7 +13,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
 
-from collections import Counter  # <- aggiunto per il controllo per‐batch
+from collections import Counter  # <- added for per-batch class balance check
 from datamodules.finetune_datamodule import DeepFakeFinetuningDataModule
 
 logging.basicConfig(level=logging.INFO)
@@ -45,15 +45,15 @@ def main(cfg):
     test_counter = Counter(test_labels)
     logger.info(f"Test: REAL = {test_counter[dm.test_dataset.idx_real]}, FAKE = {test_counter[dm.test_dataset.idx_fake]}")
 
-    # 2.5) Controllo del bilanciamento per classe in ogni batch del train_loader
-    logger.info("\nControllo bilanciamento per batch nel train loader:")
+    # 2.5) Per-batch class balance check in the training loader
+    logger.info("\nChecking class balance per batch in the training loader:")
     train_loader = dm.train_dataloader()
     for batch_idx, (imgs, labels) in enumerate(train_loader):
         counts = Counter(labels.tolist())
         n_real = counts.get(dm.train_dataset.idx_real, 0)
         n_fake = counts.get(dm.train_dataset.idx_fake, 0)
         logger.info(f"Batch {batch_idx:03d} -> REAL: {n_real}, FAKE: {n_fake}")
-        # Esaminiamo solo le prime 10 batch per verifica
+        # Check only the first 10 batches for verification
         if batch_idx >= 9:
             break
 
@@ -101,7 +101,7 @@ def main(cfg):
         default_root_dir=tb_log_dir,
     )
 
-    # 6) Train (opzione per riprendere da checkpoint precedente)
+    # 6) Train (option to resume from a previous checkpoint)
     resume_ckpt = cfg.get("resume_from_checkpoint", None)
     if resume_ckpt:
         logger.info(f"Resuming training from checkpoint: {resume_ckpt}")
