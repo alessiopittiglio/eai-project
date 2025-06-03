@@ -425,6 +425,9 @@ class DeepFakeFinetuningDataModule(L.LightningDataModule):
                         weights.append(1.0 / count_fake)
                 num_samples = 2 * count_real
 
+            # WARNING: This logic assumes that FAKE is the minority class.
+            # If instead REAL is the minority class, this approach will incorrectly
+            # upsample FAKE, potentially increasing class imbalance.
             elif self.upsample:
                 # want to use fraction f of fakes; let fcount_fake = f * count_fake
                 f = self.upsample_fraction
