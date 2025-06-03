@@ -1,10 +1,10 @@
 import os
-import lightning as L
-from transformers import AutoModelForImageClassification
 
-from torch.utils.data import DataLoader, WeightedRandomSampler
-from torchvision.datasets import ImageFolder
+import lightning as L
+from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 from torchvision import transforms
+from torchvision.datasets import ImageFolder
+from transformers import AutoModelForImageClassification
 from timm.data.transforms_factory import create_transform
 
 
