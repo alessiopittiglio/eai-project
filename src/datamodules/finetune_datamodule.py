@@ -70,44 +70,49 @@ class DeepFakeFinetuningDataModule(L.LightningDataModule):
         self.val_transform = None
         self.test_transform = None
 
-    def setup(self, stage=None):
+    def _prepare_transforms(self):
         # 1) Create a dummy model to extract mean/std/crop_pct from config
         tmp_model = AutoModelForImageClassification.from_pretrained(
             self.model_name, trust_remote_code=True
         )
-        mean = tmp_model.config.mean
+        cfg_model = tmp_model.config
         std = tmp_model.config.std
+        mean = tmp_model.config.mean
         crop_mode = tmp_model.config.crop_mode
         crop_pct = tmp_model.config.crop_pct
-        tmp_model.cpu()
+
         del tmp_model
 
         # 2) Define transforms
         # Base resize and center‐crop for validation/test
-        base_val = create_transform(
-            input_size=(3, self.image_size_width, self.image_size_height),
+        self.val_transform = create_transform(
+            input_size=(
+                3,
+                self.image_size_height,
+                self.image_size_width,
+            ),  # TIMM uses (C, H, W)
             is_training=False,
             mean=mean,
             std=std,
             crop_mode=crop_mode,
             crop_pct=crop_pct,
         )
-        self.val_transform = base_val
-        self.test_transform = base_val
+        self.test_transform = self.val_transform
 
         # For training: define separate real/fake transforms
         # Fake: standard training augmentation
         train_base = create_transform(
-            input_size=(3, self.image_size_width, self.image_size_height),
+            input_size=(self.image_size_height, self.image_size_width),
             is_training=True,
             mean=mean,
             std=std,
             crop_mode=crop_mode,
             crop_pct=crop_pct,
         )
+
         # If augment_real is True, apply the same augmentations + extra to REAL
         if self.augment_real:
-            aug_real = transforms.Compose(
+            self.train_transform_real = transforms.Compose(
                 [
                     transforms.RandomHorizontalFlip(p=0.5),
                     transforms.RandomVerticalFlip(p=0.2),
@@ -118,19 +123,24 @@ class DeepFakeFinetuningDataModule(L.LightningDataModule):
                 ]
             )
         else:
-            aug_real = train_base
+            self.train_transform_real = train_base
 
         # Fake uses the standard train_base transform
-        aug_fake = train_base
+        self.train_transform_fake = train_base
 
-        # 3) Build datasets
+    def setup(self, stage=None):
+        self._prepare_transforms()
+
+        # Build datasets
         train_dir = os.path.join(self.data_dir, "train")
         val_dir = os.path.join(self.data_dir, "val")
         test_dir = os.path.join(self.data_dir, "test")
 
         # Use CustomImageFolder to route REAL vs FAKE to different transforms
         self.train_dataset = CustomImageFolder(
-            train_dir, transform_real=aug_real, transform_fake=aug_fake
+            train_dir,
+            transform_real=self.train_transform_real,
+            transform_fake=self.train_transform_fake,
         )
         self.val_dataset = CustomImageFolder(
             val_dir,
