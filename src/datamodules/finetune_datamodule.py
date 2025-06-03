@@ -7,11 +7,15 @@ from torchvision.datasets import ImageFolder
 from torchvision import transforms
 from timm.data.transforms_factory import create_transform
 
+
 class CustomImageFolder(ImageFolder):
     """
-    Wrap torchvision.datasets.ImageFolder so that we can apply different transforms per class.
-    We assume the classes are named "REAL" and "FAKE" (in that order), but we use label indices 0/1.
+    Wrap torchvision.datasets.ImageFolder so that we can apply different transforms per
+    class.
+    We assume the classes are named "REAL" and "FAKE" (in that order), but we use label
+    indices 0/1.
     """
+
     def __init__(self, root, transform_real=None, transform_fake=None):
         super().__init__(root)
         # We expect self.classes == ["REAL", "FAKE"] (alphabetical by default).
@@ -103,12 +107,16 @@ class DeepFakeFinetuningDataModule(L.LightningDataModule):
         )
         # If augment_real is True, apply the same augmentations + extra to REAL
         if self.augment_real:
-            aug_real = transforms.Compose([
-                transforms.RandomHorizontalFlip(p=0.5),
-                transforms.RandomVerticalFlip(p=0.2),
-                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
-                train_base
-            ])
+            aug_real = transforms.Compose(
+                [
+                    transforms.RandomHorizontalFlip(p=0.5),
+                    transforms.RandomVerticalFlip(p=0.2),
+                    transforms.ColorJitter(
+                        brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1
+                    ),
+                    train_base,
+                ]
+            )
         else:
             aug_real = train_base
 
@@ -122,25 +130,32 @@ class DeepFakeFinetuningDataModule(L.LightningDataModule):
 
         # Use CustomImageFolder to route REAL vs FAKE to different transforms
         self.train_dataset = CustomImageFolder(
-            train_dir,
-            transform_real=aug_real,
-            transform_fake=aug_fake
+            train_dir, transform_real=aug_real, transform_fake=aug_fake
         )
         self.val_dataset = CustomImageFolder(
             val_dir,
             transform_real=self.val_transform,
-            transform_fake=self.val_transform
+            transform_fake=self.val_transform,
         )
         self.test_dataset = CustomImageFolder(
             test_dir,
             transform_real=self.test_transform,
-            transform_fake=self.test_transform
+            transform_fake=self.test_transform,
         )
-      
+
         # Ensure we have both classes in train/val/test
-        assert self.train_dataset.idx_real is not None and self.train_dataset.idx_fake is not None, "Dataset must contain both REAL and FAKE classes."
-        assert self.val_dataset.idx_real is not None and self.val_dataset.idx_fake is not None, "Validation dataset must contain both REAL and FAKE classes."
-        assert self.test_dataset.idx_real is not None and self.test_dataset.idx_fake is not None, "Test dataset must contain both REAL and FAKE classes."
+        assert (
+            self.train_dataset.idx_real is not None
+            and self.train_dataset.idx_fake is not None
+        ), "Dataset must contain both REAL and FAKE classes."
+        assert (
+            self.val_dataset.idx_real is not None
+            and self.val_dataset.idx_fake is not None
+        ), "Validation dataset must contain both REAL and FAKE classes."
+        assert (
+            self.test_dataset.idx_real is not None
+            and self.test_dataset.idx_fake is not None
+        ), "Test dataset must contain both REAL and FAKE classes."
 
         # 4) Compute class counts on TRAIN
         targets = [label for _, label in self.train_dataset.samples]
