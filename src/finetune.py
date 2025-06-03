@@ -1,20 +1,24 @@
 import argparse
 import logging
 import os
+from collections import Counter  # <- added for per-batch class balance check
+
 import yaml
 import torch
-
-import lightning as L
 from PIL import ImageFile
 
-from lightning_modules import DeepFakeFinetuningLightningModule
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-
+import lightning as L
+from lightning.pytorch.callbacks import (
+    EarlyStopping,
+    LearningRateMonitor,
+    ModelCheckpoint,
+)
 from lightning.pytorch.loggers import TensorBoardLogger
-from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping, LearningRateMonitor
 
-from collections import Counter  # <- added for per-batch class balance check
 from datamodules.finetune_datamodule import DeepFakeFinetuningDataModule
+from lightning_modules import DeepFakeFinetuningLightningModule
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
