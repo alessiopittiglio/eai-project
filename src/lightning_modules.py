@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import timm
 from torchmetrics.classification import BinaryAUROC, Accuracy
 import lightning as L
 from torchmetrics import Accuracy, AUROC
@@ -34,6 +35,8 @@ class DeepfakeClassifier(L.LightningModule):
 
         if self.hparams.model_name == "resnet18_single_frame":
             self.model = ResNet18.ResNet18SingleFrame(**self.hparams.model_params)
+        elif self.hparams.model_name == "xception":
+            self.model = timm.create_model('xception', **self.hparams.model_params)
         elif self.hparams.model_name == "xception3d":
             # N.B: This model requires input with shape (B, C, T, H, W)
             self.model = Xception3D.Xception3DClassifier(**self.hparams.model_params)
