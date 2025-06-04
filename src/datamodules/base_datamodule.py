@@ -33,23 +33,29 @@ class DeepfakeDataModule(L.LightningDataModule):
         # This allows to access them later in the code
         # and also to log them in the experiment tracker
         self.save_hyperparameters()
+
+        self._set_dataset_class()
         
         self.train_tfm = None
         self.eval_tfm = None
 
+    def _set_dataset_class(self):
+        """Configure dataset type and related parameters."""
         if self.hparams.load_sequences:
-            logger.info(f"[DataModule] Configured to load SEQUENCES (T={self.hparams.sequence_length})")
+            logger.info(
+                f"[DataModule] Loading SEQUENCES (T={self.hparams.sequence_length})"
+            )
             self.dataset_class = SequenceDataset
-            self.dataset_specific_args = {
+            self.dataset_args = {
                 "sequence_length": self.hparams.sequence_length,
                 "sampling_stride": self.hparams.sampling_stride,
-                "max_videos_per_split": self.hparams.max_videos_per_split
+                "max_videos_per_split": self.hparams.max_videos_per_split,
             }
         else:
-            logger.info("[DataModule] Configured to load SINGLE FRAMES")
+            logger.info("[DataModule] Loading SINGLE FRAMES")
             self.dataset_class = SingleFrameDataset
-            self.dataset_specific_args = {
-                "max_frames_per_video": self.hparams.max_frames_per_video
+            self.dataset_args = {
+                "max_frames_per_video": self.hparams.max_frames_per_video,
             }
 
     def prepare_data(self):
@@ -81,7 +87,7 @@ class DeepfakeDataModule(L.LightningDataModule):
         common_args = {
             "root_dir": self.hparams.data_dir,
             "label_dirs": self.hparams.label_dirs,
-            **self.dataset_specific_args
+            **self.dataset_args
         }
 
         if stage == "fit" or stage is None:
