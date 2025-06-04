@@ -107,7 +107,16 @@ class BaseFramesDataset(Dataset):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(split='{self.split}', samples={len(self)})"
-
+    
+    @property
+    def targets(self) -> List[int]:
+        """Returns a list of all labels (targets) in the dataset."""
+        if not hasattr(self, '_targets_cache'):
+            if not self.samples:
+                self._targets_cache = []
+            else:
+                self._targets_cache = [label for _, label in self.samples]
+        return self._targets_cache
 
 class SingleFrameDataset(BaseFramesDataset):
     """
