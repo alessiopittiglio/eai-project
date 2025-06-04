@@ -1,11 +1,12 @@
-import lightning as L
 import logging
-from datasets import SingleFrameDataset, SequenceDataset
-from torch.utils.data import DataLoader, Dataset
 from typing import Dict, Optional, Any
-from utils import build_transforms
-
 from collections import defaultdict
+
+import lightning as L
+from torch.utils.data import DataLoader, Dataset
+
+from datasets import SingleFrameDataset, SequenceDataset
+from utils import build_transforms
 
 logger = logging.getLogger(__name__)
 
