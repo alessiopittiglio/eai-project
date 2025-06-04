@@ -1,9 +1,10 @@
 import logging
 from typing import Dict, Optional, Any
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 import lightning as L
-from torch.utils.data import DataLoader, Dataset
+import torch
+from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
 from datasets import SingleFrameDataset, SequenceDataset
 from utils import build_transforms
@@ -25,7 +26,9 @@ class DeepfakeDataModule(L.LightningDataModule):
             batch_size: int = 32,
             num_workers: int = 4,
             pin_memory: bool = True,
-            transform_config: Optional[Dict[str, Any]] = None
+            transform_config: Optional[Dict[str, Any]] = None,
+            use_weighted_sampler: bool = True,
+            seed: int = 42
         ):
         super().__init__()
 
@@ -94,6 +97,9 @@ class DeepfakeDataModule(L.LightningDataModule):
             self.train_dataset = self.dataset_class(split='train', transform=self.train_tfm, **common_args)
             self.val_dataset = self.dataset_class(split='val', transform=self.eval_tfm, **common_args)
 
+            if self.hparams.use_weighted_sampler and self.train_dataset and len(self.train_dataset) > 0:
+                self.train_sampler = self._build_weighted_sampler(self.train_dataset.targets)
+
         if stage == "test" or stage is None:
             self.test_dataset = self.dataset_class(split='test', transform=self.eval_tfm, **common_args)
 
@@ -101,21 +107,45 @@ class DeepfakeDataModule(L.LightningDataModule):
             self.predict_dataset = self.dataset_class(split='predict', transform=self.eval_tfm, **common_args)
 
         self._log_split_counts()
-        
-    def _create_dataloader(self, dataset: Dataset, shuffle: bool) -> DataLoader:
+    
+    def _build_weighted_sampler(self, targets: list) -> Optional[WeightedRandomSampler]:
+        if not targets:
+            return None
+
+        class_counts = Counter(targets)
+        logger.info(f"[DataModule] Train class counts for sampler: {dict(class_counts)}")
+
+        if len(class_counts) < 2:
+            return None
+
+        class_weights = {cls: 1.0 / count for cls, count in class_counts.items()}
+        sample_weights = [class_weights[t] for t in targets]
+
+        return WeightedRandomSampler(
+            weights=sample_weights,
+            num_samples=len(sample_weights),
+            replacement=True,
+            generator=torch.Generator().manual_seed(self.hparams.seed),
+        )
+            
+    def _create_dataloader(self, dataset: Dataset, shuffle: bool, sampler: Optional[WeightedRandomSampler] = None) -> DataLoader:
         """
         Helper for creating a DataLoader with common parameters.
         """
+
+        actual_shuffle = shuffle if sampler is None else False
+
         return DataLoader(
             dataset,
             batch_size=self.hparams.batch_size,
             num_workers=self.hparams.num_workers,
-            shuffle=shuffle,
+            shuffle=actual_shuffle,
+            sampler=sampler,
             pin_memory=self.hparams.pin_memory,
         )
     
     def train_dataloader(self):
-        return self._create_dataloader(self.train_dataset, shuffle=True)
+        return self._create_dataloader(self.train_dataset, shuffle=True, sampler=self.train_sampler)
 
     def val_dataloader(self):
         return self._create_dataloader(self.val_dataset, shuffle=False)
