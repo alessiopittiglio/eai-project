@@ -13,7 +13,7 @@ from lightning.pytorch.callbacks import (
     LearningRateMonitor,
     ModelCheckpoint,
 )
-from lightning.pytorch.loggers import TensorBoardLogger
+from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 
 from datamodules.finetune_datamodule import DeepFakeFinetuningDataModule
 from lightning_modules import DeepFakeFinetuningLightningModule
@@ -80,6 +80,13 @@ def main(cfg):
         save_dir=cfg["output_dir"],
         name=cfg["name_model"],
     )
+    
+    wandb_logger = WandbLogger(
+        project=cfg.get("wandb_project", "deepfake-detection"),
+        name=cfg["name_model"],
+        save_dir=cfg["output_dir"],
+        config=cfg,
+    )
 
     checkpoint_callback_best = ModelCheckpoint(
         monitor=cfg["monitor_metric"],
@@ -109,7 +116,7 @@ def main(cfg):
 
     trainer = L.Trainer(
         max_epochs=cfg["max_epochs"],
-        logger=pl_logger,
+        logger=wandb_logger,
         callbacks=[
             checkpoint_callback_best,
             checkpoint_callback_last,

@@ -52,7 +52,9 @@ model:
 
   # Parameters for criterion
   criterion_name: "cross_entropy"
-  criterion_params: {}
+  criterion_params: {
+    weight: [4.7, 0.56]
+  }
 
     
   # Parameters for optimizer and scheduler

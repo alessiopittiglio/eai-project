@@ -13,7 +13,7 @@ weight_decay: 0.01
 # 3) Data & Transforms
 image_size_width: 720                        # input size 
 image_size_height: 540                       # input size 
-batch_size: 32
+batch_size: 16
 num_workers: 8
 
 # Imbalance handling (choose one)
@@ -26,7 +26,7 @@ augment_real: true                     # if upsample: apply data augmentation to
 devices: "auto"
 precision: bf16-mixed
 max_epochs: 20
-# resume_from_checkpoint: "/cluster/home/robergio/ondemand/giordanopittiglio2425/src/outputs/DeepFakeDetector/version_2/last.ckpt"
+#resume_from_checkpoint: "/cluster/home/robergio/ondemand/giordanopittiglio2425/outputs/MambaVision/version_8/last.ckpt"
 
 early_stopping: true                  # if true, stop training if no improvement in "monitor_metric" for "patience" epochs
 early_stop_patience: 5                # number of epochs with no improvement before stopping
