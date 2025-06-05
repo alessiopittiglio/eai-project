@@ -10,11 +10,11 @@ seed: 42
 # Data Configuration (for DeepfakeDataModule)
 # -----------------------------------------------------------------------------------------------------
 data:
-  data_dir: data_frames/ffpp          
+  data_dir: data_frames/ffpp    
   label_dirs:
     REAL: 0
     FAKE: 1
-  load_sequences: True           # Default: false (loads single frames [C,H,W])
+  load_sequences: False            # Default: false (loads single frames [C,H,W])
   sequence_length: 16             # Used if load_sequences: true (sequence length T)
   sampling_stride: 1              # Used if load_sequences: true (stride between frames in sequence)
   max_frames_per_video: null      # Optional: max frames per video (for SingleFrameDataset)
@@ -22,11 +22,11 @@ data:
 
   # DataLoader parameters
   batch_size: 2
-  num_workers: 4
+  num_workers: 8
 
   # Parameters for building transforms
   transform:
-    img_size: [1080,720]  # [H,W]
+    img_size: 224
     norm_mean: [0.485, 0.456, 0.406]
     norm_std: [0.229, 0.224, 0.225]
     train_augmentations: true
@@ -35,20 +35,10 @@ data:
 # Model Configuration (for DeepfakeClassifier)
 # -----------------------------------------------------------------------------------------------------
 model:
-  model_name: VideoTransformer
-  num_classes: 2
-
+  model_name: xception
+  num_classes: 2 #common step criterion and sigmoid
   model_params:
-    image_size: [1080, 720]  # [H,W]
-    num_frames: 16
-    in_channels: 3
-    patch_size: [2, 16, 16] # [T, H, W]
-    embed_dim: 768
-    depth: 12
-    num_heads: 12
-    mlp_ratio: 4.0
-    dropout: 0.1
-    num_classes: 2
+    num_classes: 2 #Testa del modello
 
   # Parameters for criterion
   criterion_name: "cross_entropy"
@@ -56,31 +46,32 @@ model:
     weight: [4.7, 0.56]
   }
 
-    
   # Parameters for optimizer and scheduler
-  optimizer_name: "adam"
+  optimizer_name: "adamW"
   optimizer_params:
-    weight_decay: 0.01
     lr: 0.0001
-    betas: [0.9, 0.999]
-    eps: 0.0000001
+    weight_decay: 0.01
 
+  # Parameters for learning rate scheduler
   use_scheduler: true
-  scheduler_name: "warmup"
+  scheduler_name: "plateau"
   scheduler_params:
-    num_warmup_steps: 500    # e.g. first 500 steps warm up
-    # num_training_steps=total_steps = num_epochs * (num_training_samples // batch_size)
+    factor: 0.1
+    patience: 5
 
   accuracy_task: "multiclass"
   accuracy_task_params:
-    num_classes: 2 # Only used for multiclass accuracy metric
+    num_classes: 2 #accuracy
+
+  # accuracy_task: "binary"
+  # accuracy_task_params: {}
 
 # -----------------------------------------------------------------------------------------------------
 # Settings for the PyTorch Lightning Trainer
 # -----------------------------------------------------------------------------------------------------
 trainer:
   accelerator: "auto"
-  devices: 4
+  devices: "auto"
   precision: bf16-mixed
   deterministic: false
   max_epochs: 250
@@ -92,7 +83,7 @@ trainer:
 # Logging Configuration (for the Trainer's logger)
 # -----------------------------------------------------------------------------------------------------
 logger:
-  type: "wandb"
+  type: "tensorboard"
 
 # -----------------------------------------------------------------------------
 # Settings for the execution
