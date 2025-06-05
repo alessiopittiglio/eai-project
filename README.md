@@ -1,5 +1,7 @@
 # Deepfake Video Detection: A Comparative Study
 
+![Demo](./assets/demo.gif)
+
 ## Usage
 
 The primary workflow involves preprocessing raw videos into frames and then using configuration files with `src/train.py` for training.
