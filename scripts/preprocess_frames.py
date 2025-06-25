@@ -193,6 +193,56 @@ def augment_for_balance(dataset_root: Path, skip_existing: bool, workers: int) -
         logger.info(f"{key.title()}: {cnt}")
     logger.info(f"--- Done augmenting {dataset_root} ---")
 
+def process_celebdfv2(root_dir: Path, output_dir: Path, 
+                      num_frames: int = 16, 
+                      skip_existing: bool = True, 
+                      workers: int = 4) -> None:
+    """
+    Process Celeb-DF-v2 dataset extracting frames from all videos
+    in Celeb-real, Celeb-synthesis, YouTube-real folders.
+    """
+    logger.info("--- Celeb-DF-v2 Dataset Processing ---")
+    
+    test_list = (root_dir / "List_of_testing_videos.txt").read_text().splitlines()
+    test_set = set(line.split(' ', 1)[1] for line in test_list)
+
+    folders = {
+        'Celeb-real': 0,
+        'Celeb-synthesis': 1,
+        'YouTube-real': 0,
+    }
+
+    tasks = []
+    for folder_name, label in folders.items():
+        folder_path = root_dir / folder_name
+        if not folder_path.is_dir():
+            logger.warning(f"Missing folder: {folder_path}")
+            continue
+        for video_path in folder_path.glob("*.mp4"):
+            rel_path = f"{folder_name}/{video_path.name}"
+            if rel_path not in test_set:
+                continue  # usa solo test set, o rimuovi questo controllo per tutto il dataset
+
+            split = "test"
+            label_name = "REAL" if label == 0 else "FAKE"
+            out_dir = output_dir / 'celebdfv2' / split / label_name / video_path.stem
+
+            tasks.append({
+                'video_path': video_path,
+                'output_dir': out_dir,
+                'num_frames': num_frames,
+                'skip_existing': skip_existing,
+            })
+        
+    summary = {'processed': 0, 'skipped': 0, 'error': 0}
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        for status, _ in tqdm(executor.map(_process_single_video, tasks), total=len(tasks), desc="CelebDF-V2 Videos"):
+            summary[status] += 1
+
+    logger.info("--- Celeb-DF-v2 Summary ---")
+    for key, count in summary.items():
+        logger.info(f"{key.title()}: {count}")
+
 
 def process_dfdc(video_source_dir: Path, 
                  metadata_path: Path,
@@ -328,7 +378,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Preprocess DFDC and FF++ video datasets by extracting frames in parallel."
     )
-    parser.add_argument('--dataset', choices=['dfdc', 'ffpp'], required=True,
+    parser.add_argument('--dataset', choices=['dfdc', 'ffpp', 'celebdfv2'], required=True,
                         help="Dataset to process: 'dfdc' or 'ffpp'.")
     parser.add_argument('--output_dir', type=str, required=True,
                         help="Root directory to save frames.")
@@ -359,6 +409,11 @@ if __name__ == '__main__':
                              help="Test ratio.")
     ffpp_group.add_argument('--ffpp_random_state', type=int, default=42,
                              help="Random seed.")
+    
+    # Celeb-DF-v2 args
+    celebdfv2_group = parser.add_argument_group('Celeb-DF-v2')
+    celebdfv2_group.add_argument('--celebdfv2_root', type=str,
+                                 default='./data/Celeb-DF-v2', help="Celeb-DF-v2 root directory.")
 
     args = parser.parse_args()
     out_path = Path(args.output_dir)
@@ -374,7 +429,15 @@ if __name__ == '__main__':
             workers=args.workers,
             augment=args.augment
         )
-    else:
+    elif args.dataset == 'celebdfv2':
+        process_celebdfv2(
+            root_dir=Path(args.celebdfv2_root),
+            output_dir=out_path,
+            num_frames=args.num_frames,
+            skip_existing=args.skip_existing,
+            workers=args.workers,
+        )
+    elif args.dataset == 'ffpp':
         process_ffpp(
             orig_root=Path(args.ffpp_orig_root),
             manip_root=Path(args.ffpp_manip_root),
